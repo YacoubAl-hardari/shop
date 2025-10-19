@@ -5,6 +5,7 @@
 <img width="400" height="400" alt="screencapture-shop-test-admin-user-merchant-account-entries-2025-10-19-18_44_04" src="https://github.com/user-attachments/assets/624fd878-992d-4273-8dfe-71309741e3bf" />
 <img width="400" height="400" alt="screencapture-shop-test-admin-manage-personal-data-2025-10-19-18_44_15" src="https://github.com/user-attachments/assets/0d167943-5896-40cd-8808-cc4232452d3a" />
 <img width="400" height="400" alt="screencapture-shop-test-admin-2025-10-19-18_43_13" src="https://github.com/user-attachments/assets/9bb637b0-3329-4275-93db-d3a14b5c91ce" />
+<img width="400" height="400" alt="screencapture-shop-test-admin-manage-financial-settings-2025-10-19-23_08_22" src="https://github.com/user-attachments/assets/ed4fa1cf-fa1b-4afd-b1c4-600c902e9f9a" />
 
 
 
