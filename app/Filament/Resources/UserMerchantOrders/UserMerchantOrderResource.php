@@ -23,13 +23,20 @@ class UserMerchantOrderResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShoppingBag;
 
     protected static ?string $recordTitleAttribute = 'order_number';
-    protected static ?string $navigationLabel = 'طلبات التجار';
-    protected static ?int $navigationSort = 4;
-    protected static ?string $pluralModelLabel = 'طلبات التجار';
+ 
 
+    public static function getModelLabel(): string
+    {
+        return "الطلبات";
+    }
     public static function getNavigationLabel(): string
     {
-        return "طلبات التجار";
+        return "الطلبات";
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return "الطلبات";
     }
 
     public static function form(Schema $schema): Schema

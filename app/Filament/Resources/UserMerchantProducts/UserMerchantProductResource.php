@@ -22,12 +22,27 @@ class UserMerchantProductResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCube;
 
-    protected static ?string $recordTitleAttribute = 'name';
-    protected static ?string $navigationLabel = 'منتجات التجار';
-    protected static ?int $navigationSort = 3;
-    protected static ?string $pluralModelLabel = 'منتجات التجار';
+    public static function getNavigationParentItem(): ?string
+    {
+        return "التجار";
+    }
 
+    public static function getNavigationSort(): ?int
+    {
+        return 2;
+    }
+
+    public static function getModelLabel(): string
+    {
+        return "منتجات التجار";
+    }
     public static function getNavigationLabel(): string
+    {
+        return "منتجات التجار";
+    }
+
+   
+    public static function getPluralModelLabel(): string
     {
         return "منتجات التجار";
     }

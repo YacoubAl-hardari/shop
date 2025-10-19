@@ -23,15 +23,29 @@ class UserMerchantPaymentTransactionResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
 
     protected static ?string $recordTitleAttribute = 'transaction_number';
-    protected static ?string $navigationLabel = 'معاملات دفع التجار';
-    protected static ?int $navigationSort = 11;
-    protected static ?string $pluralModelLabel = 'معاملات دفع التجار';
+    public static function getNavigationGroup(): ?string
+{
+    return "القيود & المالية";
+}
 
-    public static function getNavigationLabel(): string
+    public static function getNavigationSort(): ?int
     {
-        return "معاملات دفع التجار";
+        return 2;
     }
 
+    public static function getModelLabel(): string
+    {
+        return "الحركات المالية";
+    }
+    public static function getNavigationLabel(): string
+    {
+        return "الحركات المالية";
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return "الحركات المالية";
+    }
     public static function form(Schema $schema): Schema
     {
         return UserMerchantPaymentTransactionForm::configure($schema);

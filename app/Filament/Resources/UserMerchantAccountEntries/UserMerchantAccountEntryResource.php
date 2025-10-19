@@ -23,13 +23,29 @@ class UserMerchantAccountEntryResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
     protected static ?string $recordTitleAttribute = 'entry_number';
-    protected static ?string $navigationLabel = 'قيود حسابات التجار';
-    protected static ?int $navigationSort = 10;
-    protected static ?string $pluralModelLabel = 'قيود حسابات التجار';
 
+    public static function getNavigationGroup(): ?string
+{
+    return "القيود & المالية";
+}
+
+    public static function getNavigationSort(): ?int
+    {
+        return 1;
+    }
+
+    public static function getModelLabel(): string
+    {
+        return "القيود";
+    }
     public static function getNavigationLabel(): string
     {
-        return "قيود حسابات التجار";
+        return "القيود";
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return "القيود";
     }
 
     public static function form(Schema $schema): Schema

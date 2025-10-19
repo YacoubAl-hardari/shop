@@ -23,14 +23,34 @@ class UserMerchantResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingStorefront;
 
     protected static ?string $recordTitleAttribute = 'name';
-    protected static ?string $navigationLabel = 'التجار';
-    protected static ?int $navigationSort = 2;
-    protected static ?string $pluralModelLabel = 'التجار';
+
+    public static function getNavigationSort(): ?int
+    {
+        return 4;
+    }
+
+    public static function getModelLabel(): string
+    {
+        return "التجار";
+    }
 
     public static function getNavigationLabel(): string
     {
         return "التجار";
     }
+
+    public static function getNavigationBadge(): ?string
+    {
+        return UserMerchant::count();
+    }
+    public static function getPluralModelLabel(): string
+    {
+        return "التجار";
+    }
+
+
+
+
 
     public static function form(Schema $schema): Schema
     {

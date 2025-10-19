@@ -23,11 +23,27 @@ class UserMerchantAccountStatementResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
     protected static ?string $recordTitleAttribute = 'id';
-    protected static ?string $navigationLabel = 'كشوفات حسابات التجار';
-    protected static ?int $navigationSort = 9;
-    protected static ?string $pluralModelLabel = 'كشوفات حسابات التجار';
 
+         public static function getNavigationParentItem(): ?string
+    {
+        return "التجار";
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        return 2;
+    }
+
+    public static function getModelLabel(): string
+    {
+        return "كشوفات حسابات التجار";
+    }
     public static function getNavigationLabel(): string
+    {
+        return "كشوفات حسابات التجار";
+    }
+
+    public static function getPluralModelLabel(): string
     {
         return "كشوفات حسابات التجار";
     }

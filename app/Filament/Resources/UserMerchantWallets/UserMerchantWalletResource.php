@@ -23,14 +23,31 @@ class UserMerchantWalletResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCreditCard;
 
     protected static ?string $recordTitleAttribute = 'account_name';
-    protected static ?string $navigationLabel = 'محافظ التجار';
-    protected static ?int $navigationSort = 6;
-    protected static ?string $pluralModelLabel = 'محافظ التجار';
 
-    public static function getNavigationLabel(): string
-    {
-        return "محافظ التجار";
-    }
+    public static function getNavigationParentItem(): ?string
+{
+   return "التجار";
+}
+
+public static function getNavigationSort(): ?int
+{
+   return 2;
+}
+
+public static function getModelLabel(): string
+{
+   return "محافظ التجار";
+}
+public static function getNavigationLabel(): string
+{
+   return "محافظ التجار";
+}
+
+public static function getPluralModelLabel(): string
+{
+   return "محافظ التجار";
+}
+
 
     public static function form(Schema $schema): Schema
     {

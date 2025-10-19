@@ -110,6 +110,7 @@ class OrderService
                     $order->total_price,
                     $user->max_spending_limit
                 ))
+                ->persistent()
                 ->icon('heroicon-o-exclamation-triangle')
                 ->send();
         }
@@ -123,6 +124,7 @@ class OrderService
                     $order->total_price,
                     $user->min_spending_limit
                 ))
+                ->persistent()
                 ->icon('heroicon-o-information-circle')
                 ->send();
         }
@@ -138,6 +140,7 @@ class OrderService
                     $newDebt,
                     $user->max_debt_limit
                 ))
+                ->persistent()
                 ->icon('heroicon-o-exclamation-circle')
                 ->persistent()
                 ->send();
@@ -158,6 +161,7 @@ class OrderService
                     $newDebt,
                     $user->salary
                 ))
+                ->persistent()
                 ->icon('heroicon-o-shield-exclamation')
                 ->persistent()
                 ->send();
@@ -172,6 +176,7 @@ class OrderService
                     $newDebt,
                     $user->salary
                 ))
+                ->persistent()
                 ->icon('heroicon-o-exclamation-triangle')
                 ->send();
         }
