@@ -126,7 +126,7 @@ graph TD
 ### 1️⃣ تحميل المشروع
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/YacoubAl-hardari/shop.git
 cd shop
 ```
 
