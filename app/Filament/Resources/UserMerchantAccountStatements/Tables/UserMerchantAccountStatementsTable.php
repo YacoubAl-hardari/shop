@@ -94,10 +94,10 @@ class UserMerchantAccountStatementsTable
                     DateRangeFilter::make('transaction_date')
                     ->label('تاريخ المعاملة'),
             ])
-            ->actions([
+            ->recordActions([
                 // Actions will be handled by the resource
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkAction::make('exportExcel')
                     ->label('تصدير إلى Excel')
                     ->icon('heroicon-o-arrow-down-tray')

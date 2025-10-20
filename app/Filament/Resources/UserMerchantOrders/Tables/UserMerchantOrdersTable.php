@@ -60,10 +60,10 @@ class UserMerchantOrdersTable
                     ->searchable()
                     ->preload(),
             ])
-            ->actions([
+            ->recordActions([
                 // Actions will be handled by the resource
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkAction::make('exportExcel')
                     ->label('تصدير إلى Excel')
                     ->icon('heroicon-o-arrow-down-tray')

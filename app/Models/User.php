@@ -103,4 +103,44 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserMerchantAccountEntry::class);
     }
+
+    /**
+     * Get the user's budgets.
+     */
+    public function budgets()
+    {
+        return $this->hasMany(Budget::class);
+    }
+
+    /**
+     * Get the user's budget categories.
+     */
+    public function budgetCategories()
+    {
+        return $this->hasMany(BudgetCategory::class);
+    }
+
+    /**
+     * Get the user's budget alerts.
+     */
+    public function budgetAlerts()
+    {
+        return $this->hasMany(BudgetAlert::class);
+    }
+
+    /**
+     * Get the user's active budget.
+     */
+    public function activeBudget()
+    {
+        return $this->hasOne(Budget::class)->where('is_active', true)->latest();
+    }
+
+    /**
+     * Get total debt across all merchants.
+     */
+    public function getTotalDebt(): float
+    {
+        return $this->merchants()->sum('balance');
+    }
 }

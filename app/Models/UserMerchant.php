@@ -16,6 +16,7 @@ class UserMerchant extends Model
         'information',
         'is_active',
         'balance',
+        'budget_category_id',
     ];
 
     protected $casts = [
@@ -77,5 +78,13 @@ class UserMerchant extends Model
     public function accountEntries(): HasMany
     {
         return $this->hasMany(UserMerchantAccountEntry::class);
+    }
+
+    /**
+     * Get the budget category for this merchant.
+     */
+    public function budgetCategory(): BelongsTo
+    {
+        return $this->belongsTo(BudgetCategory::class);
     }
 }

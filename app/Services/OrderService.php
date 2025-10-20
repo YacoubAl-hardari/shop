@@ -19,7 +19,8 @@ class OrderService
         protected UserMerchantOrderItemRepository $orderItemRepository,
         protected UserMerchantRepository $merchantRepository,
         protected UserMerchantAccountEntryRepository $accountEntryRepository,
-        protected UserMerchantAccountStatementRepository $accountStatementRepository
+        protected UserMerchantAccountStatementRepository $accountStatementRepository,
+        protected BudgetService $budgetService
     ) {}
 
     /**
@@ -77,6 +78,9 @@ class OrderService
 
             // Check and send financial alerts
             $this->checkFinancialAlerts($order, $newBalance);
+
+            // Process budget spending
+            $this->budgetService->processOrderSpending($order);
         });
     }
 

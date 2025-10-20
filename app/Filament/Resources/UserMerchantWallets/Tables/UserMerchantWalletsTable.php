@@ -62,10 +62,10 @@ class UserMerchantWalletsTable
                     ->trueLabel('المحافظ النشطة فقط')
                     ->falseLabel('المحافظ غير النشطة فقط'),
             ])
-            ->actions([
+            ->recordActions([
                 // Actions will be handled by the resource
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 // Bulk actions will be handled by the resource
             ]);
     }

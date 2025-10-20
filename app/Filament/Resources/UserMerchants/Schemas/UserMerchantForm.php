@@ -4,6 +4,7 @@ namespace App\Filament\Resources\UserMerchants\Schemas;
 
 use App\Models\User;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Textarea;
@@ -27,11 +28,13 @@ class UserMerchantForm
         TextInput::make('email')
             ->label('البريد الإلكتروني')
             ->email()
+            ->required()
             ->maxLength(255),
 
         TextInput::make('phone')
             ->label('رقم الهاتف')
             ->tel()
+            ->required()
             ->maxLength(255),
 
         Textarea::make('information')
@@ -42,6 +45,17 @@ class UserMerchantForm
         Toggle::make('is_active')
             ->label('نشط')
             ->default(true),
+
+        Select::make('budget_category_id')
+            ->label('فئة الميزانية')
+            ->relationship('budgetCategory', 'name', function ($query) {
+                return $query->where('user_id',Auth::id())
+                    ->where('is_active', true);
+            })
+            ->searchable()
+            ->preload()
+            ->placeholder('اختر فئة (اختياري)')
+            ->helperText('ربط التاجر بفئة ميزانية لتتبع الإنفاق'),
             
           ])
           ->columnSpanFull()

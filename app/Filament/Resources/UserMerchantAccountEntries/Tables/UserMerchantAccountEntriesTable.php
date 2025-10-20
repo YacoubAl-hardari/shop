@@ -103,10 +103,10 @@ class UserMerchantAccountEntriesTable
                     DateRangeFilter::make('entry_date')
                     ->label('تاريخ القيد'),
             ])
-            ->actions([
+            ->recordActions([
                 // Actions will be handled by the resource
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkAction::make('exportExcel')
                     ->label('تصدير إلى Excel')
                     ->icon('heroicon-o-arrow-down-tray')

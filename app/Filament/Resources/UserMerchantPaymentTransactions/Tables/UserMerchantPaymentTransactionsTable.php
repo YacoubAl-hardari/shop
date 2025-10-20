@@ -103,10 +103,10 @@ class UserMerchantPaymentTransactionsTable
                     DateRangeFilter::make('payment_date')
                     ->label('تاريخ الدفع'),
             ])
-            ->actions([
+            ->recordActions([
                 // Actions will be handled by the resource
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 // Bulk actions will be handled by the resource
             ]);
     }
