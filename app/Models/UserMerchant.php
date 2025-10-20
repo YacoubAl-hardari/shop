@@ -17,6 +17,7 @@ class UserMerchant extends Model
         'is_active',
         'balance',
         'budget_category_id',
+        'merchant_category_id',
     ];
 
     protected $casts = [
@@ -86,5 +87,13 @@ class UserMerchant extends Model
     public function budgetCategory(): BelongsTo
     {
         return $this->belongsTo(BudgetCategory::class);
+    }
+
+    /**
+     * Get the merchant category for this merchant.
+     */
+    public function merchantCategory(): BelongsTo
+    {
+        return $this->belongsTo(MerchantCategory::class);
     }
 }

@@ -56,6 +56,13 @@ class UserMerchantForm
             ->preload()
             ->placeholder('اختر فئة (اختياري)')
             ->helperText('ربط التاجر بفئة ميزانية لتتبع الإنفاق'),
+
+        Select::make('merchant_category_id')
+            ->label('تصنيف التاجر')
+            ->relationship('merchantCategory', 'name')
+            ->searchable()
+            ->preload()
+            ->placeholder('اختر تصنيف (اختياري)'),
             
           ])
           ->columnSpanFull()
