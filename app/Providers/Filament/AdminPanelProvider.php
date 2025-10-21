@@ -20,6 +20,9 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Filament\Support\Facades\FilamentView;
+use Filament\View\PanelsRenderHook;
+use Illuminate\Support\Facades\Blade;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -67,9 +70,13 @@ class AdminPanelProvider extends PanelProvider
                 FilamentApexChartsPlugin::make()
             ])
             // ->spa(hasPrefetching: true)
-            
-            
-            
-            ;
+            ->renderHook(
+                PanelsRenderHook::BODY_START,
+                fn (): string => Blade::render('@vite(["resources/js/shepherd-tour.js", "resources/css/shepherd-tour.css"])')
+            )
+            ->renderHook(
+                PanelsRenderHook::USER_MENU_BEFORE,
+                fn (): string => Blade::render('<x-filament::icon-button icon="heroicon-o-academic-cap" color="info" data-shepherd-tour-trigger tooltip="الجولة التعريفية" />')
+            );
     }
 }

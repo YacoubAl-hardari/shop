@@ -18,3 +18,4 @@ class MerchantCategory extends Model
         return $this->hasMany(UserMerchant::class);
     }
 }
+
