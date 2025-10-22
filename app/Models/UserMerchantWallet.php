@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTeam;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class UserMerchantWallet extends Model
 {
+    use BelongsToTeam;
+
     protected $fillable = [
+        'team_id',
         'user_merchant_id',
         'account_name',
         'bank_account_number',

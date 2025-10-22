@@ -3,12 +3,16 @@
 namespace App\Models;
 
 use App\Enums\BudgetAlertType;
+use App\Models\Concerns\BelongsToTeam;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BudgetAlert extends Model
 {
+    use BelongsToTeam;
+
     protected $fillable = [
+        'team_id',
         'user_id',
         'budget_id',
         'budget_category_id',

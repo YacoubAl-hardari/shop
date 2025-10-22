@@ -23,6 +23,10 @@ use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Blade;
+use App\Models\Team;
+use App\Filament\Pages\Tenancy\RegisterTeam;
+use App\Filament\Pages\Tenancy\EditTeamProfile;
+use App\Http\Middleware\ApplyTenantScopes;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -37,6 +41,10 @@ class AdminPanelProvider extends PanelProvider
             ->registration()
             ->emailVerification()
             ->passwordReset()
+            ->tenant(Team::class, slugAttribute: 'slug')
+            // Using path-based routing: /admin/{team-slug}
+            ->tenantRegistration(RegisterTeam::class)
+            ->tenantProfile(EditTeamProfile::class)
             ->colors([
                 'primary' => Color::Amber,
             ])
@@ -65,6 +73,12 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+            ])
+            ->tenantMiddleware([
+                ApplyTenantScopes::class,
+            ], isPersistent: true)
+            ->tenantMenuItems([
+                'register' => fn () => null, // إخفاء زر تسجيل حساب جديد
             ])
             ->plugins([
                 FilamentApexChartsPlugin::make()

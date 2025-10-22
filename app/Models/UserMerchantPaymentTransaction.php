@@ -4,13 +4,17 @@ namespace App\Models;
 
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentTransactionStatus;
+use App\Models\Concerns\BelongsToTeam;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class UserMerchantPaymentTransaction extends Model
 {
+    use BelongsToTeam;
+
     protected $fillable = [
+        'team_id',
         'user_id',
         'user_merchant_id',
         'user_merchant_wallet_id',
