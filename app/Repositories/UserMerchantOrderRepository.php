@@ -24,6 +24,23 @@ class UserMerchantOrderRepository
     }
 
     /**
+     * Generate next order number for a merchant
+     *
+     * @param int $merchantId
+     * @return string
+     */
+    public function generateOrderNumberForMerchant(int $merchantId): string
+    {
+        $lastOrder = UserMerchantOrder::where('user_merchant_id', $merchantId)
+            ->orderBy('id', 'desc')
+            ->first();
+        
+        $nextNumber = $lastOrder ? (int) $lastOrder->order_number + 1 : 1;
+        
+        return str_pad($nextNumber, 7, '0', STR_PAD_LEFT);
+    }
+
+    /**
      * Find order by ID
      *
      * @param int $orderId

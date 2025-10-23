@@ -35,6 +35,17 @@ class OrderService
     }
 
     /**
+     * Generate order number for a merchant
+     *
+     * @param int $merchantId
+     * @return string
+     */
+    public function generateOrderNumberForMerchant(int $merchantId): string
+    {
+        return $this->orderRepository->generateOrderNumberForMerchant($merchantId);
+    }
+
+    /**
      * Calculate total price from order items
      *
      * @param array $items

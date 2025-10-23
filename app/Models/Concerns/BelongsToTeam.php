@@ -14,8 +14,15 @@ trait BelongsToTeam
     protected static function bootBelongsToTeam(): void
     {
         static::creating(function ($model) {
-            if (Filament::hasTenant() && !$model->team_id) {
-                $model->team_id = Filament::getTenant()->id;
+            if (!$model->team_id) {
+                try {
+                    $tenant = Filament::getTenant();
+                    if ($tenant instanceof Team) {
+                        $model->team_id = $tenant->id;
+                    }
+                } catch (\Exception $e) {
+                    // Tenant not available in this context
+                }
             }
         });
     }

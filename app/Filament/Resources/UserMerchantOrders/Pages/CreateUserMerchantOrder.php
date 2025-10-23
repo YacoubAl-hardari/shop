@@ -29,7 +29,7 @@ class CreateUserMerchantOrder extends CreateRecord
 
         // Generate order number if not provided
         if (empty($data['order_number'])) {
-            $data['order_number'] = $orderService->generateOrderNumber($data['user_id']);
+            $data['order_number'] = $orderService->generateOrderNumberForMerchant($data['user_merchant_id']);
         }
 
         // Calculate total price from order items if not provided

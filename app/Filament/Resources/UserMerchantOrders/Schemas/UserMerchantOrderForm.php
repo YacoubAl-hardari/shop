@@ -47,18 +47,29 @@ class UserMerchantOrderForm
                         ->preload()
                         ->required()
                         ->live()
-                        ->afterStateUpdated(function () {
-                            // Clear order items when merchant changes
+                        ->afterStateUpdated(function (callable $set, $state) {
+                            // Generate new order number for the selected merchant
+                            if ($state) {
+                                $lastOrder = \App\Models\UserMerchantOrder::where('user_merchant_id', $state)
+                                    ->orderBy('id', 'desc')
+                                    ->first();
+                                $nextNumber = $lastOrder ? (int) $lastOrder->order_number + 1 : 1;
+                                $set('order_number', str_pad($nextNumber, 7, '0', STR_PAD_LEFT));
+                            }
                         }),
     
                     TextInput::make('order_number')
                         ->label('رقم الطلب')
                         ->disabled()
                         ->dehydrated()
-                        ->default(function () {
+                        ->live()
+                        ->default(function (callable $get) {
                             // Get the last order number for current user and increment it
-                            $userId = \Illuminate\Support\Facades\Auth::id();
-                            $lastOrder = \App\Models\UserMerchantOrder::where('user_id', $userId)
+                            $merchantId = $get('user_merchant_id');
+                            if (!$merchantId) {
+                                return '';
+                            }
+                            $lastOrder = \App\Models\UserMerchantOrder::where('user_merchant_id', $merchantId)
                                 ->orderBy('id', 'desc')
                                 ->first();
                             $nextNumber = $lastOrder ? (int) $lastOrder->order_number + 1 : 1;
@@ -77,6 +88,8 @@ class UserMerchantOrderForm
     
                     Repeater::make('order_items')
                         ->label('عناصر الطلب')
+                        ->live()
+                        ->defaultItems(1)
                         ->visible(fn (callable $get) => !empty($get('user_merchant_id')))
                     ->schema([
                         Toggle::make('use_barcode_search')

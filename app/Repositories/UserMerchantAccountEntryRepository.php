@@ -22,6 +22,23 @@ class UserMerchantAccountEntryRepository
     }
 
     /**
+     * Generate next entry number for a specific merchant
+     * (scoped per user_merchant_id, not globally)
+     *
+     * @param int $userMerchantId
+     * @return string
+     */
+    public function generateEntryNumberForMerchant(int $userMerchantId): string
+    {
+        $lastEntry = UserMerchantAccountEntry::where('user_merchant_id', $userMerchantId)
+            ->orderBy('id', 'desc')
+            ->first();
+        $nextNumber = $lastEntry ? (int) $lastEntry->entry_number + 1 : 1;
+        
+        return str_pad($nextNumber, 7, '0', STR_PAD_LEFT);
+    }
+
+    /**
      * Create account entry for payment transaction
      *
      * @param UserMerchantPaymentTransaction $transaction
@@ -32,7 +49,7 @@ class UserMerchantAccountEntryRepository
         UserMerchantPaymentTransaction $transaction,
         float $balanceAfter
     ): UserMerchantAccountEntry {
-        $entryNumber = $this->generateEntryNumber();
+        $entryNumber = $this->generateEntryNumberForMerchant($transaction->user_merchant_id);
 
         return UserMerchantAccountEntry::create([
             'user_id' => $transaction->user_id,
@@ -75,7 +92,7 @@ class UserMerchantAccountEntryRepository
         \App\Models\UserMerchantOrder $order,
         float $balanceAfter
     ): UserMerchantAccountEntry {
-        $entryNumber = $this->generateEntryNumber();
+        $entryNumber = $this->generateEntryNumberForMerchant($order->user_merchant_id);
 
         return UserMerchantAccountEntry::create([
             'user_id' => $order->user_id,
