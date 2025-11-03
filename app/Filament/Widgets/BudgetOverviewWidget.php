@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Repositories\BudgetRepository;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
+use App\Filament\Resources\Budgets\BudgetResource;
 
 class BudgetOverviewWidget extends BaseWidget
 {
@@ -23,9 +24,7 @@ class BudgetOverviewWidget extends BaseWidget
                     ->description('ابدأ الآن')
                     ->descriptionIcon('heroicon-o-plus-circle')
                     ->color('gray')
-                    ->extraAttributes([
-                        'class' => 'cursor-pointer',
-                    ]),
+                    ->url(BudgetResource::getUrl('create')),
             ];
         }
 

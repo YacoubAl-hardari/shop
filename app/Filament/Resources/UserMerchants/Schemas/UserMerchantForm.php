@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\UserMerchants\Schemas;
 
 use App\Models\User;
+use Filament\Facades\Filament;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
@@ -10,6 +11,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
+use Illuminate\Validation\Rule;
 
 class UserMerchantForm
 {
@@ -29,13 +31,19 @@ class UserMerchantForm
             ->label('البريد الإلكتروني')
             ->email()
             ->required()
-            ->maxLength(255),
+            ->maxLength(255)
+            ->unique('user_merchants', 'email', ignoreRecord: true, modifyRuleUsing: function ($rule) {
+                return $rule->where('team_id', Filament::getTenant()->id);
+            }),
 
         TextInput::make('phone')
             ->label('رقم الهاتف')
             ->tel()
             ->required()
-            ->maxLength(255),
+            ->maxLength(255)
+            ->unique('user_merchants', 'phone', ignoreRecord: true, modifyRuleUsing: function ($rule) {
+                return $rule->where('team_id', Filament::getTenant()->id);
+            }),
 
         Textarea::make('information')
             ->label('معلومات إضافية')
