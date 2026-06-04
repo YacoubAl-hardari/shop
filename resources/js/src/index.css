@@ -1,0 +1,209 @@
+@import "tailwindcss";
+@config "../../../tailwind.config.ts";
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 220 10% 98%;
+    --foreground: 220 10% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 10% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 10% 15%;
+
+    --primary: 220 13% 48%; /* أزرق رمادي هادئ أكثر */
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 220 13% 38%;
+
+    --secondary: 220 10% 92%;
+    --secondary-foreground: 220 10% 25%;
+    --secondary-hover: 220 10% 87%;
+
+    --success: 140 4% 70%;
+    --success-foreground: 0 0% 100%;
+
+    --muted: 220 10% 95%;
+    --muted-foreground: 220 10% 45%;
+
+    --accent: 220 10% 90%;
+    --accent-foreground: 220 10% 60%;
+
+    --destructive: 0 0% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 10% 88%;
+    --input: 220 10% 88%;
+    --ring: 220 10% 60%;
+
+    --radius: 0.75rem;
+
+    /* Gradients: ألوان العلم اليمني */
+    --gradient-primary: linear-gradient(180deg, hsl(220,13%,60%) 0%, hsl(220,13%,48%) 60%, hsl(220,13%,38%) 100%); /* أزرق رمادي هادئ */
+    --gradient-secondary: linear-gradient(180deg, hsl(220,13%,60%) 0%, hsl(220,13%,48%) 60%, hsl(220,13%,38%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(220,13%,60%) 0%, hsl(220,13%,48%) 60%, hsl(220,13%,38%) 100%);
+    --gradient-card: linear-gradient(180deg, #fff 0%, #f4f4f4 100%);
+
+    /* Shadows */
+    --shadow-sm: 0 2px 8px hsl(220 10% 15% / 0.08);
+    --shadow-md: 0 4px 16px hsl(220 10% 15% / 0.12);
+    --shadow-lg: 0 8px 24px hsl(220 10% 15% / 0.16);
+    --shadow-xl: 0 16px 48px hsl(220 10% 15% / 0.2);
+    --shadow-glow: 0 0 40px hsl(215 85% 50% / 0.3);
+
+    /* Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  .dark {
+    --background: 220 10% 10%;
+    --foreground: 220 10% 98%;
+
+    --card: 220 10% 12%;
+    --card-foreground: 220 10% 98%;
+
+    --popover: 220 10% 12%;
+    --popover-foreground: 220 10% 98%;
+
+    --primary: 220 13% 38%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 220 13% 28%;
+
+    --secondary: 220 10% 18%;
+    --secondary-foreground: 220 10% 85%;
+    --secondary-hover: 220 10% 23%;
+
+    --success: 140 4% 40%;
+    --success-foreground: 0 0% 100%;
+
+    --muted: 220 10% 18%;
+    --muted-foreground: 220 10% 65%;
+
+    --accent: 220 10% 20%;
+    --accent-foreground: 220 10% 60%;
+
+    --destructive: 0 0% 40%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 10% 22%;
+    --input: 220 10% 22%;
+    --ring: 220 10% 40%;
+
+    --shadow-sm: 0 2px 8px hsl(220 10% 0% / 0.3);
+    --shadow-md: 0 4px 16px hsl(220 10% 0% / 0.4);
+    --shadow-lg: 0 8px 24px hsl(220 10% 0% / 0.5);
+    --shadow-xl: 0 16px 48px hsl(220 10% 0% / 0.6);
+    --shadow-glow: 0 0 40px hsl(215 85% 55% / 0.4);
+  }
+}
+
+/* Graphik Arabic font faces */
+@font-face {
+  font-family: 'Graphik Arabic';
+  src: url('/fonts/GraphikArabic-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Graphik Arabic';
+  src: url('/fonts/GraphikArabic-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Graphik Arabic';
+  src: url('/fonts/GraphikArabic-Semibold.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Graphik Arabic';
+  src: url('/fonts/GraphikArabic-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Graphik Arabic';
+  src: url('/fonts/GraphikArabic-Black.woff') format('woff');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Graphik Arabic';
+  src: url('/fonts/GraphikArabic-Super.woff') format('woff');
+  font-weight: 950;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Graphik Arabic', system-ui, sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    direction: rtl;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
+  }
+
+  .card-gradient {
+    background: var(--gradient-card);
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.5s ease-out;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-2 hover:shadow-lg;
+  }
+
+  .hover-glow {
+    @apply transition-all duration-300 hover:shadow-[0_0_20px_rgba(59,130,246,0.5)];
+  }
+}
