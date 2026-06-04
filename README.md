@@ -1,5 +1,7 @@
 # 🛒 Merchant & Customer Account Management System
 
+<img width="400" height="400" alt="screencapture-shop-test-admin-user-merchants-2025-10-19-18_43_34" src="screencapture-shop-test-2026-06-04-22_59_43.png" />
+
 <img width="400" height="400" alt="screencapture-shop-test-admin-user-merchants-2025-10-19-18_43_34" src="https://github.com/user-attachments/assets/c5fc772a-df3a-4eb2-9030-64bdf6dd76d5" />
 <img width="400" height="400" alt="screencapture-shop-test-admin-user-merchants-9-financial-stats-2025-10-19-18_43_50" src="https://github.com/user-attachments/assets/ad82b70b-15ac-4c46-81e7-5ada6e30f773" />
 <img width="400" height="400" alt="screencapture-shop-test-admin-user-merchant-account-entries-2025-10-19-18_44_04" src="https://github.com/user-attachments/assets/624fd878-992d-4273-8dfe-71309741e3bf" />
