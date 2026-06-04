@@ -48,7 +48,7 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
-            ->viteTheme('resources/css/filament/admin/theme.css')
+            ->viteTheme('resources/css/filament/admin/theme.css', 'build/filament')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
@@ -83,14 +83,7 @@ class AdminPanelProvider extends PanelProvider
             ->plugins([
                 FilamentApexChartsPlugin::make()
             ])
-            // ->spa(hasPrefetching: true)
-            ->renderHook(
-                PanelsRenderHook::BODY_START,
-                fn (): string => Blade::render('@vite(["resources/js/shepherd-tour.js", "resources/css/shepherd-tour.css"])')
-            )
-            ->renderHook(
-                PanelsRenderHook::USER_MENU_BEFORE,
-                fn (): string => Blade::render('<x-filament::icon-button icon="heroicon-o-academic-cap" color="info" data-shepherd-tour-trigger tooltip="الجولة التعريفية" />')
-            );
+            ->spa(hasPrefetching: true)
+            ;
     }
 }

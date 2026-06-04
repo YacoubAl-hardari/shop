@@ -3,9 +3,12 @@
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserDataController;
 use Illuminate\Support\Facades\Route;
-
+// React SPA entry
 Route::get('/', function () {
-    return view('welcome');
+    return view('app');
+});
+Route::get('/timeline', function () {
+    return view('app');
 });
 
 // Unit management routes
