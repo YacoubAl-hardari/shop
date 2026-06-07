@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\MerchantCustomers\Pages;
 
 use App\Filament\Concerns\RecordsCustomerPayment;
+use App\Filament\Concerns\SharesCustomerStatement;
 use App\Filament\Resources\MerchantCustomers\MerchantCustomerResource;
 use App\Models\JournalLine;
 use App\Models\MerchantCustomer;
@@ -13,6 +14,7 @@ use Filament\Support\Icons\Heroicon;
 class MerchantCustomerStatement extends Page
 {
     use RecordsCustomerPayment;
+    use SharesCustomerStatement;
 
     protected static string $resource = MerchantCustomerResource::class;
 
@@ -50,6 +52,11 @@ class MerchantCustomerStatement extends Page
     }
 
     protected function getPaymentCustomer(): MerchantCustomer
+    {
+        return $this->record;
+    }
+
+    protected function getShareCustomer(): MerchantCustomer
     {
         return $this->record;
     }

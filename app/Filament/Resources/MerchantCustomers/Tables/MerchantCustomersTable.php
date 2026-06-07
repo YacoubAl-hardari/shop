@@ -21,6 +21,15 @@ class MerchantCustomersTable
                 TextColumn::make('email')->label('البريد'),
                 TextColumn::make('balance')->label('المديونية')->money('SAR'),
                 TextColumn::make('credit_balance')->label('الرصيد الفائض')->money('SAR'),
+                TextColumn::make('user.name')->label('المستخدم المرتبط')->placeholder('—'),
+                IconColumn::make('is_statement_shared')
+                    ->label('مشاركة الكشف')
+                    ->state(fn ($record): bool => $record->isStatementShared())
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-minus-circle')
+                    ->trueColor('success')
+                    ->falseColor('gray'),
                 IconColumn::make('is_active')->label('نشط')->boolean(),
             ])
             ->recordActions([

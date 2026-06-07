@@ -43,6 +43,12 @@ class Dashboard extends BaseDashboard
             return [];
         }
 
-        return parent::getWidgets();
+        $widgets = parent::getWidgets();
+
+        if ($user instanceof User && ($user->isUser() || $user->isAdmin())) {
+            $widgets[] = \App\Filament\Widgets\SharedStatementsAlertWidget::class;
+        }
+
+        return $widgets;
     }
 }

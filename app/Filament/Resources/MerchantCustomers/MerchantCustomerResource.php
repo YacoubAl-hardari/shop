@@ -4,6 +4,8 @@ namespace App\Filament\Resources\MerchantCustomers;
 
 use App\Enums\UserType;
 use App\Filament\Concerns\HasRoleAccess;
+use App\Filament\Resources\MerchantCustomers\Pages\CreateMerchantCustomer;
+use App\Filament\Resources\MerchantCustomers\Pages\EditMerchantCustomer;
 use App\Filament\Resources\MerchantCustomers\Pages\ListMerchantCustomers;
 use App\Filament\Resources\MerchantCustomers\Pages\MerchantCustomerStatement;
 use App\Filament\Resources\MerchantCustomers\Pages\ViewMerchantCustomer;
@@ -13,6 +15,7 @@ use App\Filament\Resources\MerchantCustomers\Tables\MerchantCustomersTable;
 use App\Models\MerchantCustomer;
 use BackedEnum;
 use Filament\Resources\Resource;
+use Illuminate\Database\Eloquent\Builder;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
@@ -67,11 +70,19 @@ class MerchantCustomerResource extends Resource
         return MerchantCustomersTable::configure($table);
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['user', 'activeStatementShare']);
+    }
+
     public static function getPages(): array
     {
         return [
             'index' => ListMerchantCustomers::route('/'),
+            'create' => CreateMerchantCustomer::route('/create'),
             'view' => ViewMerchantCustomer::route('/{record}'),
+            'edit' => EditMerchantCustomer::route('/{record}/edit'),
             'statement' => MerchantCustomerStatement::route('/{record}/statement'),
         ];
     }

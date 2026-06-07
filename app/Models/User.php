@@ -164,6 +164,22 @@ class User extends Authenticatable implements FilamentUser, HasTenants
             ->withTimestamps();
     }
 
+    public function receivedStatementShares()
+    {
+        return $this->hasMany(MerchantCustomerStatementShare::class);
+    }
+
+    public function activeStatementShares()
+    {
+        return $this->hasMany(MerchantCustomerStatementShare::class)
+            ->where('is_active', true);
+    }
+
+    public function hasActiveStatementShares(): bool
+    {
+        return $this->activeStatementShares()->exists();
+    }
+
     /**
      * Get the teams that the user belongs to.
      * Merchants can have multiple branches; users only one.

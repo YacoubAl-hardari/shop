@@ -69,12 +69,6 @@ class MerchantSystemSeeder extends Seeder
             'unit' => 'قطعة',
         ]);
 
-        MerchantCustomer::create([
-            'team_id' => $team->id,
-            'name' => 'عميل نقدي',
-            'phone' => '0500000001',
-        ]);
-
         $user = User::factory()->user()->create([
             'name' => 'مستخدم تجريبي',
             'email' => 'user@example.com',
@@ -87,5 +81,13 @@ class MerchantSystemSeeder extends Seeder
         ]);
 
         $userTeam->members()->attach($user, ['role' => 'owner']);
+
+        MerchantCustomer::create([
+            'team_id' => $team->id,
+            'user_id' => $user->id,
+            'name' => 'عميل نقدي',
+            'phone' => '0500000001',
+            'email' => $user->email,
+        ]);
     }
 }

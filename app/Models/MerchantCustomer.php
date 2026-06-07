@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTeam;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -61,5 +62,41 @@ class MerchantCustomer extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(MerchantCustomerPayment::class);
+    }
+
+    public function statementShares(): HasMany
+    {
+        return $this->hasMany(MerchantCustomerStatementShare::class);
+    }
+
+    public function activeStatementShare(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(MerchantCustomerStatementShare::class)
+            ->where('is_active', true)
+            ->latestOfMany('shared_at');
+    }
+
+    public function team(): BelongsTo
+    {
+        return $this->belongsTo(Team::class);
+    }
+
+    public function isLinkedToUser(): bool
+    {
+        return $this->user_id !== null;
+    }
+
+    public function isStatementShared(): bool
+    {
+        if ($this->relationLoaded('activeStatementShare')) {
+            return $this->activeStatementShare !== null;
+        }
+
+        return $this->activeStatementShare()->exists();
+    }
+
+    public static function acrossTeams(): Builder
+    {
+        return static::withoutGlobalScopes();
     }
 }
