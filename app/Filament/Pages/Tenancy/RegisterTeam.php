@@ -3,6 +3,7 @@
 namespace App\Filament\Pages\Tenancy;
 
 use App\Models\Team;
+use App\Models\User;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Support\Str;
 use Filament\Schemas\Schema;
@@ -51,25 +52,25 @@ class RegisterTeam extends RegisterTenant
             ]);
     }
 
-    public function mount(): void
+    public static function canView(): bool
     {
         $user = Auth::user();
 
-        if ($user->isUser() && $user->teams()->exists()) {
-            $team = $user->teams()->first();
-            redirect()->to('/admin/'.$team->slug);
-        }
+        return $user instanceof User && ($user->isMerchant() || $user->isAdmin());
+    }
+
+    public function mount(): void
+    {
+        abort_unless(static::canView(), 404);
+
+        $this->form->fill();
     }
 
     protected function handleRegistration(array $data): Team
     {
         $user = Auth::user();
 
-        if ($user->isUser() && $user->teams()->exists()) {
-            $this->halt();
-
-            return $user->teams()->first();
-        }
+        abort_unless($user instanceof User && ($user->isMerchant() || $user->isAdmin()), 403);
 
         $team = Team::create($data);
 

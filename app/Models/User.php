@@ -180,6 +180,24 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         return $this->activeStatementShares()->exists();
     }
 
+    public function createPersonalTeam(): Team
+    {
+        $existingTeam = $this->teams()->first();
+
+        if ($existingTeam) {
+            return $existingTeam;
+        }
+
+        $team = Team::create([
+            'name' => 'حسابي الشخصي',
+            'slug' => 'personal-'.$this->id,
+        ]);
+
+        $team->members()->attach($this, ['role' => 'owner']);
+
+        return $team;
+    }
+
     /**
      * Get the teams that the user belongs to.
      * Merchants can have multiple branches; users only one.

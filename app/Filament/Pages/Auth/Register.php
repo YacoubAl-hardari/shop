@@ -78,6 +78,12 @@ class Register extends BaseRegister
 
     protected function handleRegistration(array $data): Model
     {
-        return parent::handleRegistration($data);
+        $user = parent::handleRegistration($data);
+
+        if ($user->isUser()) {
+            $user->createPersonalTeam();
+        }
+
+        return $user;
     }
 }
