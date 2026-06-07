@@ -2,17 +2,19 @@
 
 namespace App\Filament\Resources\MerchantCustomers\Pages;
 
+use App\Filament\Concerns\HasCustomerStatementFilters;
 use App\Filament\Concerns\RecordsCustomerPayment;
 use App\Filament\Concerns\SharesCustomerStatement;
 use App\Filament\Resources\MerchantCustomers\MerchantCustomerResource;
-use App\Models\JournalLine;
 use App\Models\MerchantCustomer;
 use BackedEnum;
+use Filament\Facades\Filament;
 use Filament\Resources\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 
 class MerchantCustomerStatement extends Page
 {
+    use HasCustomerStatementFilters;
     use RecordsCustomerPayment;
     use SharesCustomerStatement;
 
@@ -37,18 +39,24 @@ class MerchantCustomerStatement extends Page
     protected function getHeaderActions(): array
     {
         return [
+            $this->makeExportStatementAction(),
             $this->makeRecordCustomerPaymentAction(),
         ];
     }
 
-    public function getStatementLines()
+    protected function getStatementCustomer(): ?MerchantCustomer
     {
-        return JournalLine::query()
-            ->where('subledger_type', MerchantCustomer::class)
-            ->where('subledger_id', $this->record->id)
-            ->with(['journalEntry', 'account'])
-            ->orderByDesc('created_at')
-            ->get();
+        return $this->record;
+    }
+
+    protected function getStatementTeamId(): ?int
+    {
+        return Filament::getTenant()?->id;
+    }
+
+    protected function getStatementMerchantName(): ?string
+    {
+        return Filament::getTenant()?->name;
     }
 
     protected function getPaymentCustomer(): MerchantCustomer

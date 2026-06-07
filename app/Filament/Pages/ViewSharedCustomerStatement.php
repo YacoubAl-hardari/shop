@@ -3,8 +3,8 @@
 namespace App\Filament\Pages;
 
 use App\Enums\UserType;
+use App\Filament\Concerns\HasCustomerStatementFilters;
 use App\Filament\Concerns\HasRoleAccess;
-use App\Models\JournalLine;
 use App\Models\MerchantCustomer;
 use App\Models\MerchantCustomerStatementShare;
 use App\Services\CustomerStatementShareService;
@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Route;
 
 class ViewSharedCustomerStatement extends Page
 {
+    use HasCustomerStatementFilters;
     use HasRoleAccess;
 
     protected static function allowedRoles(): array
@@ -87,6 +88,13 @@ class ViewSharedCustomerStatement extends Page
         }
     }
 
+    protected function getHeaderActions(): array
+    {
+        return [
+            $this->makeExportStatementAction(),
+        ];
+    }
+
     public function getStatementShare(): ?MerchantCustomerStatementShare
     {
         if ($this->statementRef === null) {
@@ -99,8 +107,10 @@ class ViewSharedCustomerStatement extends Page
             return null;
         }
 
-        return app(CustomerStatementShareService::class)
+        $share = app(CustomerStatementShareService::class)
             ->findViewableShareByUuid($this->statementRef, $user);
+
+        return $share?->load('team');
     }
 
     public function getSharedCustomer(): ?MerchantCustomer
@@ -125,26 +135,18 @@ class ViewSharedCustomerStatement extends Page
         return static::$title ?? 'كشف الحساب المشترك';
     }
 
-    public function getStatementLines()
+    protected function getStatementCustomer(): ?MerchantCustomer
     {
-        $share = $this->getStatementShare();
-        $customer = $this->getSharedCustomer();
+        return $this->getSharedCustomer();
+    }
 
-        if ($share === null || $customer === null) {
-            return collect();
-        }
+    protected function getStatementTeamId(): ?int
+    {
+        return $this->getStatementShare()?->team_id;
+    }
 
-        return JournalLine::query()
-            ->select('journal_lines.*')
-            ->join('journal_entries', 'journal_entries.id', '=', 'journal_lines.journal_entry_id')
-            ->where('journal_entries.team_id', $share->team_id)
-            ->where('journal_lines.subledger_type', MerchantCustomer::class)
-            ->where('journal_lines.subledger_id', $customer->id)
-            ->with([
-                'journalEntry' => fn ($query) => $query->withoutGlobalScopes(),
-                'account' => fn ($query) => $query->withoutGlobalScopes(),
-            ])
-            ->orderByDesc('journal_lines.created_at')
-            ->get();
+    protected function getStatementMerchantName(): ?string
+    {
+        return $this->getStatementShare()?->team?->name;
     }
 }

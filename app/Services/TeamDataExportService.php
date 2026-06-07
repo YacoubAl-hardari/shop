@@ -49,6 +49,36 @@ class TeamDataExportService
         return $data;
     }
 
+    public function toFinancialExcelSheets(Team $team): array
+    {
+        $data = $this->exportTeamData($team);
+        unset($data['signature']);
+
+        return [
+            ['title' => 'العملاء', 'headings' => ['الاسم', 'الهاتف', 'البريد', 'المديونية', 'الرصيد الفائض', 'نشط'], 'rows' => collect($data['merchant_customers'])->map(fn ($r) => [
+                $r['name'], $r['phone'], $r['email'], $r['balance'], $r['credit_balance'], $r['is_active'] ? 'نعم' : 'لا',
+            ])],
+            ['title' => 'المبيعات', 'headings' => ['رقم البيع', 'العميل', 'الإجمالي', 'المدفوع', 'الآجل', 'رصيد مخصوم', 'نوع الدفع', 'طريقة الدفع', 'الحالة', 'التاريخ'], 'rows' => collect($data['pos_sales'])->map(fn ($r) => [
+                $r['sale_number'], $r['customer_name'], $r['total_amount'], $r['paid_amount'], $r['credit_amount'], $r['customer_credit_applied'], $r['payment_type'], $r['payment_method'], $r['status'], $r['created_at'],
+            ])],
+            ['title' => 'تفاصيل المبيعات', 'headings' => ['رقم البيع', 'المنتج', 'الكمية', 'السعر', 'الإجمالي'], 'rows' => collect($data['pos_sales'])->flatMap(fn ($sale) => collect($sale['items'])->map(fn ($item) => [
+                $sale['sale_number'], $item['product_name'], $item['quantity'], $item['unit_price'], $item['total'],
+            ]))],
+            ['title' => 'القيود اليومية', 'headings' => ['رقم القيد', 'التاريخ', 'الوصف', 'الحالة', 'مرجع', 'تاريخ الترحيل'], 'rows' => collect($data['journal_entries'])->map(fn ($r) => [
+                $r['entry_number'], $r['entry_date'], $r['description'], $r['status'], $r['reference_key'], $r['posted_at'],
+            ])],
+            ['title' => 'بنود القيود', 'headings' => ['رقم القيد', 'رمز الحساب', 'مدين', 'دائن', 'الوصف', 'العميل الفرعي'], 'rows' => collect($data['journal_entries'])->flatMap(fn ($entry) => collect($entry['lines'])->map(fn ($line) => [
+                $entry['entry_number'], $line['account_code'], $line['debit_amount'], $line['credit_amount'], $line['description'], $line['subledger_key'],
+            ]))],
+            ['title' => 'سدادات العملاء', 'headings' => ['العميل', 'المبلغ', 'سُدّد من المديونية', 'أُضيف للرصيد', 'طريقة الدفع', 'المرجع', 'التاريخ'], 'rows' => collect($data['merchant_customer_payments'])->map(fn ($r) => [
+                $r['customer_name'], $r['amount'], $r['applied_to_balance'], $r['surplus_to_credit'], $r['payment_method'], $r['reference_number'], $r['created_at'],
+            ])],
+            ['title' => 'شجرة الحسابات', 'headings' => ['الرمز', 'الاسم', 'النوع', 'الرصيد الطبيعي', 'الحساب الأب', 'نشط', 'نظامي'], 'rows' => collect($data['accounts'])->map(fn ($r) => [
+                $r['code'], $r['name'], $r['type'], $r['normal_balance'], $r['parent_code'], $r['is_active'] ? 'نعم' : 'لا', $r['is_system'] ? 'نعم' : 'لا',
+            ])],
+        ];
+    }
+
     public function toExcelSheets(Team $team): array
     {
         $data = $this->exportTeamData($team);

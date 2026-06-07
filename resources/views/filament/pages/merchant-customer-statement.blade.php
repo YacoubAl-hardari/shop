@@ -21,6 +21,8 @@
             </div>
         </div>
 
+        @include('filament.pages.partials.customer-statement-filters')
+
         <div class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 dark:bg-gray-800">
