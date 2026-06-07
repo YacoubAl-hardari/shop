@@ -7,9 +7,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
@@ -21,6 +18,16 @@ return new class extends Migration
             $table->enum('role', UserType::values())->default(UserType::default()->value);
             $table->string('address')->nullable();
             $table->string('phone')->nullable();
+            $table->decimal('salary', 10, 2)->nullable();
+            $table->decimal('min_spending_limit', 10, 2)->nullable();
+            $table->decimal('max_spending_limit', 10, 2)->nullable();
+            $table->decimal('max_debt_limit', 10, 2)->nullable();
+            $table->decimal('debt_warning_percentage', 5, 2)->default(50);
+            $table->decimal('debt_danger_percentage', 5, 2)->default(80);
+            $table->string('business_name')->nullable();
+            $table->string('business_activity')->nullable();
+            $table->string('business_location')->nullable();
+            $table->string('tax_number')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
@@ -41,9 +48,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('users');

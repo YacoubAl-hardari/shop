@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users');
             $table->string('name');
-            $table->string('email')->unique();
-            $table->string('phone')->unique();
+            $table->string('email');
+            $table->string('phone');
             $table->text('information')->nullable();
             $table->boolean('is_active')->default(true);
             $table->decimal('balance', 10, 2)->default(0);

@@ -126,6 +126,36 @@ class Team extends Model implements HasAvatar, HasCurrentTenantLabel, HasName
         return $this->hasMany(BudgetAlert::class);
     }
 
+    public function accounts(): HasMany
+    {
+        return $this->hasMany(Account::class);
+    }
+
+    public function journalEntries(): HasMany
+    {
+        return $this->hasMany(JournalEntry::class);
+    }
+
+    public function merchantCustomers(): HasMany
+    {
+        return $this->hasMany(MerchantCustomer::class);
+    }
+
+    public function merchantProducts(): HasMany
+    {
+        return $this->hasMany(MerchantProduct::class);
+    }
+
+    public function posSales(): HasMany
+    {
+        return $this->hasMany(PosSale::class);
+    }
+
+    public function suppliers(): HasMany
+    {
+        return $this->hasMany(Supplier::class);
+    }
+
     /**
      * Get the Filament avatar URL for the team.
      */

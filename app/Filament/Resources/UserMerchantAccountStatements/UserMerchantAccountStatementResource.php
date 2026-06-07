@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\UserMerchantAccountStatements;
 
+use App\Enums\UserType;
+use App\Filament\Concerns\HasRoleAccess;
 use App\Filament\Resources\UserMerchantAccountStatements\Pages\CreateUserMerchantAccountStatement;
 use App\Filament\Resources\UserMerchantAccountStatements\Pages\EditUserMerchantAccountStatement;
 use App\Filament\Resources\UserMerchantAccountStatements\Pages\ListUserMerchantAccountStatements;
@@ -18,7 +20,19 @@ use Filament\Tables\Table;
 
 class UserMerchantAccountStatementResource extends Resource
 {
+    use HasRoleAccess;
+
     protected static ?string $model = UserMerchantAccountStatement::class;
+
+    protected static function allowedRoles(): array
+    {
+        return [UserType::USER, UserType::ADMIN];
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 

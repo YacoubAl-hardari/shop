@@ -2,6 +2,8 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\UserType;
+use App\Filament\Concerns\HasRoleAccess;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
@@ -15,7 +17,13 @@ use Illuminate\Support\Facades\Auth;
 
 class ManageFinancialSettings extends Page implements HasForms
 {
+    use HasRoleAccess;
     use InteractsWithForms;
+
+    protected static function allowedRoles(): array
+    {
+        return [UserType::USER, UserType::ADMIN];
+    }
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCurrencyDollar;
 

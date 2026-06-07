@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\UserMerchantWallets;
 
+use App\Enums\UserType;
+use App\Filament\Concerns\HasRoleAccess;
 use App\Filament\Resources\UserMerchantWallets\Pages\CreateUserMerchantWallet;
 use App\Filament\Resources\UserMerchantWallets\Pages\EditUserMerchantWallet;
 use App\Filament\Resources\UserMerchantWallets\Pages\ListUserMerchantWallets;
@@ -18,7 +20,14 @@ use Filament\Tables\Table;
 
 class UserMerchantWalletResource extends Resource
 {
+    use HasRoleAccess;
+
     protected static ?string $model = UserMerchantWallet::class;
+
+    protected static function allowedRoles(): array
+    {
+        return [UserType::USER, UserType::ADMIN];
+    }
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCreditCard;
 

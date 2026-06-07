@@ -8,15 +8,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasTable('merchant_categories')) {
-            Schema::create('merchant_categories', function (Blueprint $table) {
-                $table->id();
-                $table->string('name');
-                $table->string('icon')->nullable();
-                $table->string('color')->nullable();
-                $table->timestamps();
-            });
-        }
+        Schema::create('merchant_categories', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('icon')->nullable();
+            $table->string('color')->nullable();
+            $table->timestamps();
+        });
     }
 
     public function down(): void
@@ -24,5 +22,3 @@ return new class extends Migration
         Schema::dropIfExists('merchant_categories');
     }
 };
-
-

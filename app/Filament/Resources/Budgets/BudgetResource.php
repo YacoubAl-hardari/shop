@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Budgets;
 
+use App\Enums\UserType;
+use App\Filament\Concerns\HasRoleAccess;
 use BackedEnum;
 use App\Models\Budget;
 use Filament\Tables\Table;
@@ -19,7 +21,14 @@ use App\Filament\Resources\Budgets\Schemas\BudgetInfolist;
 
 class BudgetResource extends Resource
 {
+    use HasRoleAccess;
+
     protected static ?string $model = Budget::class;
+
+    protected static function allowedRoles(): array
+    {
+        return [UserType::USER, UserType::ADMIN];
+    }
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
 

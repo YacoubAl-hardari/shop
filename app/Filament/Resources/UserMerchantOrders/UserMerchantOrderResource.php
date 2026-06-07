@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\UserMerchantOrders;
 
+use App\Enums\UserType;
+use App\Filament\Concerns\HasRoleAccess;
 use App\Filament\Resources\UserMerchantOrders\Pages\CreateUserMerchantOrder;
 use App\Filament\Resources\UserMerchantOrders\Pages\EditUserMerchantOrder;
 use App\Filament\Resources\UserMerchantOrders\Pages\ListUserMerchantOrders;
@@ -18,7 +20,14 @@ use Filament\Tables\Table;
 
 class UserMerchantOrderResource extends Resource
 {
+    use HasRoleAccess;
+
     protected static ?string $model = UserMerchantOrder::class;
+
+    protected static function allowedRoles(): array
+    {
+        return [UserType::USER, UserType::ADMIN];
+    }
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShoppingBag;
 

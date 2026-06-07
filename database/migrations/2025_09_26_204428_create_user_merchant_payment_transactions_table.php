@@ -18,10 +18,10 @@ return new class extends Migration
             $table->foreignId('user_merchant_wallet_id')->constrained('user_merchant_wallets', 'id', 'umpt_umw_id_foreign');
             $table->string('transaction_number')->unique();
             $table->decimal('amount', 10, 2);
-            $table->enum('payment_method', ['bank_transfer', 'cash', 'wallet', 'card']);
+            $table->enum('payment_method', ['bank_transfer', 'cash', 'check', 'card', 'wallet']);
             $table->enum('status', ['pending', 'completed', 'failed', 'cancelled'])->default('pending');
             $table->text('notes')->nullable();
-            $table->string('reference_number')->nullable(); // رقم الحوالة أو المرجع
+            $table->string('reference_number')->nullable(); // Ø±Ù‚Ù… Ø§Ù„Ø­ÙˆØ§Ù„Ø© Ø£Ùˆ Ø§Ù„Ù…Ø±Ø¬Ø¹
             $table->date('payment_date');
             $table->timestamps();
             

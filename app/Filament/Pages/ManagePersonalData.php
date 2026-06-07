@@ -2,7 +2,9 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\UserType;
 use App\Exports\UserCompleteDataExport;
+use App\Filament\Concerns\HasRoleAccess;
 use App\Services\UserDataExportService;
 use App\Services\UserDataDeletionService;
 use App\Services\UserDataImportService;
@@ -24,7 +26,13 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ManagePersonalData extends Page implements HasForms
 {
+    use HasRoleAccess;
     use InteractsWithForms;
+
+    protected static function allowedRoles(): array
+    {
+        return [UserType::USER, UserType::ADMIN];
+    }
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShieldCheck;
 

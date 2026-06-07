@@ -10,11 +10,13 @@
         "filament/filament": "~5.6.6",
         "inertiajs/inertia-laravel": "^2.0",
         "jeffersongoncalves/filament-qrcode-field": "^3.0.4",
+        "kalnoy/nestedset": "^7.0",
         "laravel/framework": "^13.0",
         "laravel/tinker": "^3.0",
         "leandrocfe/filament-apex-charts": "^5.0",
         "maatwebsite/excel": "^3.1",
-        "malzariey/filament-daterangepicker-filter": "^5.0"
+        "malzariey/filament-daterangepicker-filter": "^5.0",
+        "wsmallnews/filament-nestedset": "2.2"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

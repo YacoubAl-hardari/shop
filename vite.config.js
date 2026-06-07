@@ -7,13 +7,13 @@ import path from 'path';
 export default defineConfig({
     plugins: [
         laravel({
-            input: [
-                'resources/js/src/main.tsx',
-                'resources/js/src/index.css',
-            ],
+            input: ['resources/js/src/main.tsx'],
             refresh: true,
+            detectTls: 'shop.test',
         }),
-        react(),
+        react({
+            include: '**/*.{jsx,tsx}',
+        }),
         tailwindcss(),
     ],
     resolve: {

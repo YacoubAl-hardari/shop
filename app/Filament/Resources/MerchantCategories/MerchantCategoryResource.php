@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\MerchantCategories;
 
+use App\Enums\UserType;
+use App\Filament\Concerns\HasRoleAccess;
 use BackedEnum;
 use Filament\Tables\Table;
 use Filament\Schemas\Schema;
@@ -19,7 +21,14 @@ use App\Filament\Resources\MerchantCategories\Schemas\MerchantCategoryInfolist;
 
 class MerchantCategoryResource extends Resource
 {
+    use HasRoleAccess;
+
     protected static ?string $model = MerchantCategory::class;
+
+    protected static function allowedRoles(): array
+    {
+        return [UserType::USER, UserType::ADMIN];
+    }
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;
 

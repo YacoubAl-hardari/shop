@@ -2,11 +2,20 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\UserType;
+use App\Filament\Concerns\HasRoleAccess;
 use BackedEnum;
 use Filament\Pages\Page;
 
 class MerchantComparisonDashboard extends Page
 {
+    use HasRoleAccess;
+
+    protected static function allowedRoles(): array
+    {
+        return [UserType::USER, UserType::ADMIN];
+    }
+
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-chart-bar-square';
     
     protected string $view = 'filament.pages.merchant-comparison-dashboard';

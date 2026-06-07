@@ -2,10 +2,19 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Account;
 use App\Models\Budget;
 use App\Models\BudgetAlert;
 use App\Models\BudgetCategory;
+use App\Models\JournalEntry;
 use App\Models\MerchantCategory;
+use App\Models\MerchantCustomer;
+use App\Models\MerchantCustomerPayment;
+use App\Models\MerchantPaymentAccount;
+use App\Models\MerchantProduct;
+use App\Models\PosSale;
+use App\Models\Distributor;
+use App\Models\Supplier;
 use App\Models\UserMerchant;
 use App\Models\UserMerchantAccountEntry;
 use App\Models\UserMerchantAccountStatement;
@@ -22,14 +31,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ApplyTenantScopes
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
     public function handle(Request $request, Closure $next): Response
     {
-        // Apply global scopes to all tenant-aware models
         $models = [
             UserMerchant::class,
             UserMerchantProduct::class,
@@ -43,6 +46,15 @@ class ApplyTenantScopes
             BudgetCategory::class,
             BudgetAlert::class,
             MerchantCategory::class,
+            Account::class,
+            JournalEntry::class,
+            MerchantCustomer::class,
+            MerchantCustomerPayment::class,
+            MerchantPaymentAccount::class,
+            MerchantProduct::class,
+            PosSale::class,
+            Supplier::class,
+            Distributor::class,
         ];
 
         foreach ($models as $model) {

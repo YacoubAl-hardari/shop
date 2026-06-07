@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\UserMerchantPaymentTransactions;
 
+use App\Enums\UserType;
+use App\Filament\Concerns\HasRoleAccess;
 use App\Filament\Resources\UserMerchantPaymentTransactions\Pages\CreateUserMerchantPaymentTransaction;
 use App\Filament\Resources\UserMerchantPaymentTransactions\Pages\EditUserMerchantPaymentTransaction;
 use App\Filament\Resources\UserMerchantPaymentTransactions\Pages\ListUserMerchantPaymentTransactions;
@@ -18,7 +20,14 @@ use Filament\Tables\Table;
 
 class UserMerchantPaymentTransactionResource extends Resource
 {
+    use HasRoleAccess;
+
     protected static ?string $model = UserMerchantPaymentTransaction::class;
+
+    protected static function allowedRoles(): array
+    {
+        return [UserType::USER, UserType::ADMIN];
+    }
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
 

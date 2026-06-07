@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\UserMerchantProducts;
 
+use App\Enums\UserType;
+use App\Filament\Concerns\HasRoleAccess;
 use App\Filament\Resources\UserMerchantProducts\Pages\CreateUserMerchantProduct;
 use App\Filament\Resources\UserMerchantProducts\Pages\EditUserMerchantProduct;
 use App\Filament\Resources\UserMerchantProducts\Pages\ListUserMerchantProducts;
@@ -18,7 +20,14 @@ use Filament\Tables\Table;
 
 class UserMerchantProductResource extends Resource
 {
+    use HasRoleAccess;
+
     protected static ?string $model = UserMerchantProduct::class;
+
+    protected static function allowedRoles(): array
+    {
+        return [UserType::USER, UserType::ADMIN];
+    }
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCube;
 

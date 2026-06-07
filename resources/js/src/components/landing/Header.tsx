@@ -45,11 +45,11 @@ const Header = () => {
           {/* CTA Buttons + Theme Toggle */}
           <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
-            <Button variant="ghost" size="sm">
-              تسجيل الدخول
+            <Button variant="ghost" size="sm" asChild>
+              <a href="/admin/login">تسجيل الدخول</a>
             </Button>
-            <Button size="sm" className="bg-gradient-hero hover:opacity-90">
-              جرب مجاناً
+            <Button size="sm" className="bg-gradient-hero hover:opacity-90" asChild>
+              <a href="/admin/register?type=merchant">جرب مجاناً</a>
             </Button>
           </div>
 
@@ -78,11 +78,11 @@ const Header = () => {
               ))}
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
                 <ThemeToggle />
-                <Button variant="outline" size="sm">
-                  تسجيل الدخول
+                <Button variant="outline" size="sm" asChild>
+                  <a href="/admin/login">تسجيل الدخول</a>
                 </Button>
-                <Button size="sm" className="bg-gradient-hero hover:opacity-90">
-                  جرب مجاناً
+                <Button size="sm" className="bg-gradient-hero hover:opacity-90" asChild>
+                  <a href="/admin/register?type=merchant">جرب مجاناً</a>
                 </Button>
               </div>
             </div>

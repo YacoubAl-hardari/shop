@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\UserType;
+use App\Models\Concerns\HasUserRole;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasTenants;
 use Filament\Panel;
@@ -16,9 +18,7 @@ use Illuminate\Support\Collection;
 class User extends Authenticatable implements FilamentUser, HasTenants
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
-
-
+    use HasFactory, HasUserRole, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -38,6 +38,10 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         'max_debt_limit',
         'debt_warning_percentage',
         'debt_danger_percentage',
+        'business_name',
+        'business_activity',
+        'business_location',
+        'tax_number',
     ];
 
     /**
@@ -60,6 +64,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'role' => UserType::class,
             'salary' => 'decimal:2',
             'min_spending_limit' => 'decimal:2',
             'max_spending_limit' => 'decimal:2',
@@ -69,7 +74,6 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         ];
     }
 
-  
     /**
      * Get the user's merchants.
      */
@@ -162,11 +166,17 @@ class User extends Authenticatable implements FilamentUser, HasTenants
 
     /**
      * Get the teams that the user belongs to.
-     * Each user can only belong to ONE team.
+     * Merchants can have multiple branches; users only one.
      */
     public function getTenants(Panel $panel): Collection
     {
-        return $this->teams()->limit(1)->get();
+        $query = $this->teams();
+
+        if ($this->isUser()) {
+            $query->limit(1);
+        }
+
+        return $query->get();
     }
 
     /**

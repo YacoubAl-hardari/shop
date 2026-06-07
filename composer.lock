@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "57be0b2dd532458ba3917945db7017e7",
+    "content-hash": "dd8602516e3cf82415bf0fb9be0c9ebf",
     "packages": [
         {
             "name": "blade-ui-kit/blade-heroicons",
@@ -446,6 +446,77 @@
                 }
             ],
             "time": "2026-03-20T21:10:52+00:00"
+        },
+        {
+            "name": "codewithdennis/filament-select-tree",
+            "version": "v4.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/CodeWithDennis/filament-select-tree.git",
+                "reference": "63472b97cda7c5cce3a9628c7a2ff3e03256a3e0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/CodeWithDennis/filament-select-tree/zipball/63472b97cda7c5cce3a9628c7a2ff3e03256a3e0",
+                "reference": "63472b97cda7c5cce3a9628c7a2ff3e03256a3e0",
+                "shasum": ""
+            },
+            "require": {
+                "filament/forms": "^4.0|^5.0",
+                "illuminate/contracts": "^10.0|^11.0|^12.0|^13.0",
+                "php": "^8.2",
+                "spatie/laravel-package-tools": "^1.15.0"
+            },
+            "require-dev": {
+                "nunomaduro/collision": "^7.9||^8.0",
+                "orchestra/testbench": "^8.0|^9.0|^10.0|^11.0",
+                "pestphp/pest": "^2.0|^3.7|^4.4",
+                "pestphp/pest-plugin-arch": "^2.0|^3.0|^4.0",
+                "pestphp/pest-plugin-laravel": "^2.0|^3.1|^4.1"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "CodeWithDennis\\FilamentSelectTree\\FilamentSelectTreeServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "CodeWithDennis\\FilamentSelectTree\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "CodeWithDennis",
+                    "role": "Developer"
+                }
+            ],
+            "description": "The multi-level select field enables you to make single selections from a predefined list of options that are organized into multiple levels or depths.",
+            "homepage": "https://github.com/codewithdennis/filament-select-tree",
+            "keywords": [
+                "CodeWithDennis",
+                "filament",
+                "filament-select-tree",
+                "laravel",
+                "tree"
+            ],
+            "support": {
+                "issues": "https://github.com/codewithdennis/filament-select-tree/issues",
+                "source": "https://github.com/codewithdennis/filament-select-tree"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/CodeWithDennis",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-05-27T13:15:06+00:00"
         },
         {
             "name": "composer/pcre",
@@ -2312,6 +2383,69 @@
                 "source": "https://github.com/jeffersongoncalves/filament-qrcode-field/tree/3.0.4"
             },
             "time": "2026-03-04T03:17:59+00:00"
+        },
+        {
+            "name": "kalnoy/nestedset",
+            "version": "v7.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/lazychaser/laravel-nestedset.git",
+                "reference": "4e9ad66a3c6a8867dd69eea53e7954c3b150af6d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/lazychaser/laravel-nestedset/zipball/4e9ad66a3c6a8867dd69eea53e7954c3b150af6d",
+                "reference": "4e9ad66a3c6a8867dd69eea53e7954c3b150af6d",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/database": ">=13.0",
+                "illuminate/events": ">=13.0",
+                "illuminate/support": ">=13.0",
+                "php": "^8.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": ">=7.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Kalnoy\\Nestedset\\NestedSetServiceProvider"
+                    ]
+                },
+                "branch-alias": {
+                    "dev-master": "v5.0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Kalnoy\\Nestedset\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Alexander Kalnoy",
+                    "email": "lazychaser@gmail.com"
+                }
+            ],
+            "description": "Nested Set Model for Laravel 5.7 and up",
+            "keywords": [
+                "database",
+                "hierarchy",
+                "laravel",
+                "nested sets",
+                "nsm"
+            ],
+            "support": {
+                "issues": "https://github.com/lazychaser/laravel-nestedset/issues",
+                "source": "https://github.com/lazychaser/laravel-nestedset/tree/v7.0.0"
+            },
+            "time": "2026-04-11T13:45:58+00:00"
         },
         {
             "name": "kirschbaum-development/eloquent-power-joins",
@@ -8923,6 +9057,90 @@
                 }
             ],
             "time": "2026-04-26T05:33:54+00:00"
+        },
+        {
+            "name": "wsmallnews/filament-nestedset",
+            "version": "v2.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Wsmallnews/filament-nestedset.git",
+                "reference": "e810c41e4a3d51d18a1cb998f4e2cd65d18bb90e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Wsmallnews/filament-nestedset/zipball/e810c41e4a3d51d18a1cb998f4e2cd65d18bb90e",
+                "reference": "e810c41e4a3d51d18a1cb998f4e2cd65d18bb90e",
+                "shasum": ""
+            },
+            "require": {
+                "codewithdennis/filament-select-tree": "^4.0",
+                "filament/filament": "^4.0 || ^5.0",
+                "kalnoy/nestedset": "^6.0 || ^7.0",
+                "php": "^8.2",
+                "spatie/laravel-package-tools": "^1.15.0"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.0",
+                "nunomaduro/collision": "^7.9",
+                "nunomaduro/larastan": "^2.0.1",
+                "orchestra/testbench": "^8.0",
+                "pestphp/pest": "^2.1",
+                "pestphp/pest-plugin-arch": "^2.0",
+                "pestphp/pest-plugin-laravel": "^2.0",
+                "phpstan/extension-installer": "^1.1",
+                "phpstan/phpstan-deprecation-rules": "^1.0",
+                "phpstan/phpstan-phpunit": "^1.0",
+                "spatie/laravel-ray": "^1.26"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Wsmallnews\\FilamentNestedset\\FilamentNestedsetServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Wsmallnews\\FilamentNestedset\\": "src/",
+                    "Wsmallnews\\FilamentNestedset\\Database\\Factories\\": "database/factories/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "smallnews",
+                    "email": "1371606921@qq.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Filament nestedset tree builder powered by kalnoy/nestedset with Filament v4 and v5 support",
+            "homepage": "https://github.com/wsmallnews/filament-nestedset",
+            "keywords": [
+                "Wsmallnews",
+                "filament",
+                "filament-nestedset",
+                "filament-plugin",
+                "filament-tree",
+                "laravel",
+                "nestedset",
+                "smallnews",
+                "tree"
+            ],
+            "support": {
+                "issues": "https://github.com/wsmallnews/filament-nestedset/issues",
+                "source": "https://github.com/wsmallnews/filament-nestedset"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/Wsmallnews",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-05-14T07:23:16+00:00"
         }
     ],
     "packages-dev": [

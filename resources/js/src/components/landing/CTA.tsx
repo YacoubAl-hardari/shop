@@ -1,19 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ArrowLeft, CheckCircle2, Sparkles, Rocket, CreditCard, Lock } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
 
 const CTA = () => {
-  const [email, setEmail] = useState("");
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email) {
-      toast.success("تم التسجيل بنجاح! سنتواصل معك قريباً.");
-      setEmail("");
-    }
-  };
 
   return (
     <section className="py-20 px-4 relative overflow-hidden">
@@ -60,26 +48,26 @@ const CTA = () => {
             </div>
 
             {/* Email Form */}
-            <form onSubmit={handleSubmit} className="max-w-md mx-auto mb-6">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Input
-                  type="email"
-                  placeholder="البريد الإلكتروني"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="flex-1 h-12 text-right"
-                />
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="bg-gradient-hero hover:opacity-90 h-12 px-8"
-                >
-                  ابدأ الآن
+            <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto mb-6 justify-center">
+              <Button
+                size="lg"
+                variant="outline"
+                className="h-12 px-8"
+                asChild
+              >
+                <a href="/admin/login">تسجيل الدخول</a>
+              </Button>
+              <Button
+                size="lg"
+                className="bg-gradient-hero hover:opacity-90 h-12 px-8"
+                asChild
+              >
+                <a href="/admin/register?type=merchant">
+                  ابدأ كتاجر
                   <ArrowLeft className="mr-2 w-5 h-5" />
-                </Button>
-              </div>
-            </form>
+                </a>
+              </Button>
+            </div>
 
             <p className="text-xs text-muted-foreground">
               بالتسجيل، أنت توافق على{" "}
