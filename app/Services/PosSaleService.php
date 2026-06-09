@@ -223,6 +223,10 @@ class PosSaleService
                 ];
             }
             $lines[] = $revenueLine;
+            $totalDebit = collect($lines)->sum(fn ($l) => (float) ($l['debit_amount'] ?? 0));
+            if ($totalDebit <= 0) {
+                return;
+            }
         } elseif ($sale->payment_type === SalePaymentType::CREDIT) {
             if ($sale->credit_amount > 0) {
                 $lines[] = [

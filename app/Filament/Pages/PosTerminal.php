@@ -126,6 +126,7 @@ class PosTerminal extends Page implements HasForms
                                                         : 'اسم المنتج')
                                                     ->required()
                                                     ->disabled(fn (Get $get): bool => $get('use_barcode_search') && (bool) $get('merchant_product_id'))
+                                                    ->dehydrated(true)
                                                     ->visible(fn (Get $get): bool => ! $get('use_barcode_search') || (bool) $get('merchant_product_id'))
                                                     ->suffixAction(
                                                         Action::make('reset_barcode_search')
