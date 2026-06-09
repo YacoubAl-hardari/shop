@@ -146,6 +146,9 @@ class PosTerminal extends Page implements HasForms
                                                     ->numeric()
                                                     ->default(1)
                                                     ->minValue(0.01)
+                                                    ->validationMessages([
+                                                        'min' => 'يجب أن تكون الكمية أكبر من الصفر.',
+                                                    ])
                                                     ->required()
                                                     ->live(),
 
@@ -153,6 +156,10 @@ class PosTerminal extends Page implements HasForms
                                                     ->label('السعر')
                                                     ->numeric()
                                                     ->prefix('ر.س')
+                                                    ->minValue(0.01)
+                                                    ->validationMessages([
+                                                        'min' => 'يجب أن يكون السعر أكبر من الصفر.',
+                                                    ])
                                                     ->required()
                                                     ->live(),
                                             ])
@@ -253,6 +260,9 @@ class PosTerminal extends Page implements HasForms
                                         'merchant_customer_id' => $get('merchant_customer_id'),
                                         'apply_customer_credit' => $get('apply_customer_credit'),
                                     ]))
+                                    ->validationMessages([
+                                        'max' => 'المبلغ المدفوع للبيع الجزئي يجب أن يكون أقل من صافي قيمة الفاتورة (:max).',
+                                    ])
                                     ->visible(fn (Get $get): bool => $get('payment_type') === SalePaymentType::PARTIAL->value),
 
                                 Section::make('تفاصيل الدفع')
@@ -328,9 +338,9 @@ class PosTerminal extends Page implements HasForms
     {
         if (! $this->canCompleteSale()) {
             Notification::make()
-                ->title('بيانات غير مكتملة')
+                ->title('خطأ في التحقق')
                 ->body($this->getCompleteSaleBlockReason() ?? 'يرجى تعبئة جميع الحقول المطلوبة')
-                ->warning()
+                ->danger()
                 ->send();
 
             return;
@@ -556,6 +566,20 @@ class PosTerminal extends Page implements HasForms
 
         if ($items === []) {
             return 'أضف صنفاً واحداً على الأقل مع الاسم والكمية والسعر';
+        }
+
+        // التحقق من توافر المخزون
+        foreach ($items as $item) {
+            if (! empty($item['merchant_product_id'])) {
+                $product = MerchantProduct::find($item['merchant_product_id']);
+                if ($product) {
+                    $requestedQty = (float) ($item['quantity'] ?? 0);
+                    $availableQty = (float) $product->stock_quantity;
+                    if ($requestedQty > $availableQty) {
+                        return "الكمية المطلوبة للمنتج ({$product->name}) هي " . number_format($requestedQty, 2) . "، ولكن المتاح في المخزن هو " . number_format($availableQty, 2) . " فقط.";
+                    }
+                }
+            }
         }
 
         $paymentType = $data['payment_type'] ?? SalePaymentType::CASH->value;

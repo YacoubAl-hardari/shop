@@ -69,8 +69,12 @@ class AccountingService
 
     public function voidEntry(JournalEntry $entry): JournalEntry
     {
-        if ($entry->status === JournalEntryStatus::VOID) {
+        if ($entry->status === \App\Enums\JournalEntryStatus::VOID) {
             throw new InvalidArgumentException('القيد ملغي مسبقاً');
+        }
+
+        if ($entry->reference_type === JournalEntry::class) {
+            throw new InvalidArgumentException('لا يمكن إلغاء قيد إلغاء أو قيد عكسي.');
         }
 
         return DB::transaction(function () use ($entry) {

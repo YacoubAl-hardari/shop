@@ -56,4 +56,9 @@ class PosSale extends Model
     {
         return $this->hasMany(PosSaleItem::class);
     }
+
+    public function returns(): HasMany
+    {
+        return $this->hasMany(PosSaleReturn::class);
+    }
 }

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\SalePaymentType;
+use App\Enums\StockMovementType;
 use App\Models\MerchantCustomer;
 use App\Models\MerchantCustomerPayment;
 use App\Models\MerchantProduct;
@@ -16,6 +17,7 @@ class PosSaleService
 {
     public function __construct(
         protected AccountingService $accountingService,
+        protected StockMovementService $stockMovementService,
     ) {}
 
     /**
@@ -56,6 +58,20 @@ class PosSaleService
                 $customer->decrement('credit_balance', $customerCreditApplied);
             }
 
+            // التحقق من توافر المخزون لجميع المنتجات في قاعدة البيانات
+            foreach ($items as $item) {
+                if (! empty($item['merchant_product_id'])) {
+                    $product = MerchantProduct::find($item['merchant_product_id']);
+                    if ($product) {
+                        $requestedQty = (float) $item['quantity'];
+                        $availableQty = (float) $product->stock_quantity;
+                        if ($requestedQty > $availableQty) {
+                            throw new \InvalidArgumentException("الكمية المطلوبة للمنتج ({$product->name}) هي " . number_format($requestedQty, 2) . "، ولكن المتاح في المخزن هو " . number_format($availableQty, 2) . " فقط.");
+                        }
+                    }
+                }
+            }
+
             $remainingTotal = $totalAmount - $customerCreditApplied;
 
             $creditAmount = match ($paymentType) {
@@ -88,18 +104,22 @@ class PosSaleService
             ]);
 
             foreach ($items as $item) {
-                PosSaleItem::create([
-                    'pos_sale_id' => $sale->id,
+                $saleItem = PosSaleItem::create([
+                    'pos_sale_id'        => $sale->id,
                     'merchant_product_id' => $item['merchant_product_id'] ?? null,
-                    'product_name' => $item['product_name'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'total' => $item['quantity'] * $item['unit_price'],
+                    'product_name'       => $item['product_name'],
+                    'quantity'           => $item['quantity'],
+                    'unit_price'         => $item['unit_price'],
+                    'total'              => $item['quantity'] * $item['unit_price'],
                 ]);
 
                 if (! empty($item['merchant_product_id'])) {
-                    MerchantProduct::where('id', $item['merchant_product_id'])
-                        ->decrement('stock_quantity', $item['quantity']);
+                    $product = MerchantProduct::find($item['merchant_product_id']);
+                    if ($product) {
+                        $this->stockMovementService->recordSale(
+                            $team, $product, (float) $item['quantity'], $sale
+                        );
+                    }
                 }
             }
 
@@ -273,6 +293,28 @@ class PosSaleService
             PosSale::class,
             $sale->id,
         );
+
+        // قيد تكلفة البضائع المباعة (COGS) — النظام المستمر
+        $totalCost = $sale->items->sum(function ($item) {
+            if (! $item->merchant_product_id) {
+                return 0;
+            }
+            $product = MerchantProduct::find($item->merchant_product_id);
+            return $product ? (float) $product->cost * (float) $item->quantity : 0;
+        });
+
+        if ($totalCost > 0) {
+            $this->accountingService->post(
+                $team,
+                [
+                    ['account_code' => '5001', 'debit_amount'  => $totalCost, 'description' => 'تكلفة البضائع المباعة — بيع '.$sale->sale_number],
+                    ['account_code' => '1201', 'credit_amount' => $totalCost, 'description' => 'صرف مخزون — بيع '.$sale->sale_number],
+                ],
+                'تكلفة بضائع مباعة — بيع '.$sale->sale_number,
+                PosSale::class,
+                $sale->id,
+            );
+        }
     }
 
     protected function debitAccountCodeForMethod(?string $paymentMethod): string

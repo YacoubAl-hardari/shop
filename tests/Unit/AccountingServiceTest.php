@@ -61,3 +61,83 @@ it('validates balance without posting', function () {
         ['credit_amount' => 50],
     ]))->toThrow(InvalidArgumentException::class);
 });
+
+it('voids a manual journal entry correctly and creates a reversal', function () {
+    $entry = $this->service->post(
+        $this->team,
+        [
+            ['account_code' => '1001', 'debit_amount' => 100],
+            ['account_code' => '4003', 'credit_amount' => 100],
+        ],
+        'قيد يدوي',
+    );
+
+    $reversal = $this->service->voidEntry($entry);
+
+    expect($entry->fresh()->status)->toBe(\App\Enums\JournalEntryStatus::VOID);
+    expect($reversal->status)->toBe(\App\Enums\JournalEntryStatus::POSTED);
+    expect($reversal->reference_type)->toBe(\App\Models\JournalEntry::class);
+    expect($reversal->reference_id)->toBe($entry->id);
+
+    $debitLine = $reversal->lines->first(fn ($l) => $l->account->code === '4003');
+    $creditLine = $reversal->lines->first(fn ($l) => $l->account->code === '1001');
+
+    expect((float) $debitLine->debit_amount)->toBe(100.00);
+    expect((float) $creditLine->credit_amount)->toBe(100.00);
+});
+
+it('prevents voiding already voided entries', function () {
+    $entry = $this->service->post(
+        $this->team,
+        [
+            ['account_code' => '1001', 'debit_amount' => 100],
+            ['account_code' => '4003', 'credit_amount' => 100],
+        ],
+        'قيد يدوي',
+    );
+
+    $this->service->voidEntry($entry);
+
+    $this->expectException(InvalidArgumentException::class);
+    $this->expectExceptionMessage('القيد ملغي مسبقاً');
+
+    $this->service->voidEntry($entry);
+});
+
+it('prevents voiding a voiding/reversal entry', function () {
+    $entry = $this->service->post(
+        $this->team,
+        [
+            ['account_code' => '1001', 'debit_amount' => 100],
+            ['account_code' => '4003', 'credit_amount' => 100],
+        ],
+        'قيد يدوي',
+    );
+
+    $reversal = $this->service->voidEntry($entry);
+
+    $this->expectException(InvalidArgumentException::class);
+    $this->expectExceptionMessage('لا يمكن إلغاء قيد إلغاء أو قيد عكسي.');
+
+    $this->service->voidEntry($reversal);
+});
+
+it('allows voiding a system-generated entry and creates a reversal', function () {
+    $entry = $this->service->post(
+        $this->team,
+        [
+            ['account_code' => '1001', 'debit_amount' => 100],
+            ['account_code' => '4003', 'credit_amount' => 100],
+        ],
+        'قيد نظامي',
+        'App\Models\InventoryCount',
+        999
+    );
+
+    $reversal = $this->service->voidEntry($entry);
+
+    expect($entry->fresh()->status)->toBe(\App\Enums\JournalEntryStatus::VOID);
+    expect($reversal->status)->toBe(\App\Enums\JournalEntryStatus::POSTED);
+    expect($reversal->reference_type)->toBe(\App\Models\JournalEntry::class);
+    expect($reversal->reference_id)->toBe($entry->id);
+});

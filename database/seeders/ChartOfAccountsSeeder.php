@@ -32,6 +32,7 @@ class ChartOfAccountsSeeder extends Seeder
                 ['code' => '1003', 'name' => 'بوابات الدفع الإلكتروني', 'type' => AccountType::ASSET, 'normal_balance' => NormalBalance::DEBIT],
                 ['code' => '1101', 'name' => 'ذمم مدينة — عملاء', 'type' => AccountType::ASSET, 'normal_balance' => NormalBalance::DEBIT],
                 ['code' => '1201', 'name' => 'مخزون البضائع', 'type' => AccountType::ASSET, 'normal_balance' => NormalBalance::DEBIT],
+                ['code' => '1202', 'name' => 'فوارق جرد المخزون', 'type' => AccountType::ASSET, 'normal_balance' => NormalBalance::DEBIT],
                 ['code' => '1301', 'name' => 'مصروفات مدفوعة مقدماً', 'type' => AccountType::ASSET, 'normal_balance' => NormalBalance::DEBIT],
                 ['code' => '1401', 'name' => 'أصول ثابتة — أثاث وتجهيزات', 'type' => AccountType::ASSET, 'normal_balance' => NormalBalance::DEBIT],
                 ['code' => '1402', 'name' => 'أصول ثابتة — معدات وآلات', 'type' => AccountType::ASSET, 'normal_balance' => NormalBalance::DEBIT],
@@ -49,6 +50,7 @@ class ChartOfAccountsSeeder extends Seeder
                 ['code' => '3002', 'name' => 'الأرباح المحتجزة', 'type' => AccountType::EQUITY, 'normal_balance' => NormalBalance::CREDIT],
                 ['code' => '3003', 'name' => 'مسحوبات المالك', 'type' => AccountType::EQUITY, 'normal_balance' => NormalBalance::DEBIT],
                 ['code' => '3004', 'name' => 'صافي ربح/خسارة السنة الحالية', 'type' => AccountType::EQUITY, 'normal_balance' => NormalBalance::CREDIT],
+                ['code' => '3005', 'name' => 'ملخص الدخل (حساب إغلاق)', 'type' => AccountType::EQUITY, 'normal_balance' => NormalBalance::CREDIT, 'is_system' => true],
             ]],
             ['code' => '4000', 'name' => 'الإيرادات', 'type' => AccountType::REVENUE, 'normal_balance' => NormalBalance::CREDIT, 'is_system' => true, 'children' => [
                 ['code' => '4001', 'name' => 'إيرادات الخدمات', 'type' => AccountType::REVENUE, 'normal_balance' => NormalBalance::CREDIT],
