@@ -33,3 +33,8 @@ Route::middleware('auth')->prefix('api/user-data')->group(function () {
     Route::post('/import', [UserDataController::class, 'import']);
     Route::delete('/delete-account', [UserDataController::class, 'deleteAccount']);
 });
+
+// Barcode label printing route
+Route::middleware('auth')->get('/admin/{tenant}/products/print-barcodes', [\App\Http\Controllers\ProductBarcodeController::class, 'print'])
+    ->name('merchant.products.print-barcodes');
+
