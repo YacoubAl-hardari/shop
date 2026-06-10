@@ -86,11 +86,11 @@ class UserDataController extends Controller
                 ], 403);
             }
 
-            // Delete user account
-            $this->deletionService->deleteUserAccount($user);
-
-            // Logout user
+            // Logout user first to clear auth state and prevent cycling remember token on a deleted user
             Auth::logout();
+
+            // Delete user account and related data
+            $this->deletionService->deleteUserAccount($user);
 
             return response()->json([
                 'success' => true,

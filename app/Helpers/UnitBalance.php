@@ -88,7 +88,7 @@ class UnitBalance
      */
     public static function getMaxValue(string $category): float
     {
-        $balance = self::getMaxValue($category);
+        $balance = self::getBalance($category);
         return $balance['max_value'] ?? 1000;
     }
 
