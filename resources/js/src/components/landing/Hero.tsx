@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CheckCircle2, Play, Zap } from "lucide-react";
-import dashboardPreview from "@/assets/dashboard-preview.png";
+import { ArrowLeft, CheckCircle2, Store, Users } from "lucide-react";
 
 const Hero = () => {
   return (
@@ -15,87 +14,112 @@ const Hero = () => {
           <div className="space-y-8 animate-scale-in">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent rounded-full text-sm font-medium text-accent-foreground">
               <span className="w-2 h-2 bg-success rounded-full animate-pulse" />
-              نظام متكامل لإدارة الحسابات المالية
+              نظام مالي ومحاسبي للتجار والعملاء
             </div>
 
             <h1 className="text-5xl lg:text-6xl font-black leading-tight">
-              أدر حسابات تجارك
+              نظام متكامل
               <br />
-              <span className="text-gradient">بكل سهولة وذكاء</span>
+              <span className="text-gradient">للتاجر والعميل</span>
             </h1>
 
             <p className="text-xl text-muted-foreground leading-relaxed max-w-xl">
-              نظام محاسبي ذكي يوفر لك أدوات متقدمة لإدارة التجار، الطلبات، المدفوعات، 
-              والتقارير المالية بدقة واحترافية عالية
+              منصة واحدة تمكّن التاجر من إدارة مبيعاته ومحاسبته ومخزونه،
+              وتمكّن العميل من متابعة حساباته ومديونياته لدى تجاره بكل شفافية.
             </p>
 
-            {/* Features List */}
-            <div className="grid sm:grid-cols-2 gap-4">
-              {[
-                "قيود محاسبية تلقائية",
-                "تنبيهات ذكية للديون",
-                "تقارير مالية شاملة",
-                "واجهة سهلة الاستخدام",
-              ].map((feature) => (
-                <div key={feature} className="flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0" />
-                  <span className="text-sm font-medium">{feature}</span>
+            {/* Features List — two columns, one for merchant, one for customer */}
+            <div className="grid sm:grid-cols-2 gap-3">
+              {/* Merchant features */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400 mb-1">
+                  <Store className="w-4 h-4" /> للتاجر
                 </div>
-              ))}
+                {[
+                  "نقطة البيع (POS) بالباركود",
+                  "فواتير حرارية احترافية",
+                  "قيود محاسبية تلقائية",
+                  "تتبع المخزون لحظياً",
+                ].map((f) => (
+                  <div key={f} className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                    <span className="text-sm font-medium">{f}</span>
+                  </div>
+                ))}
+              </div>
+              {/* Customer features */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 mb-1">
+                  <Users className="w-4 h-4" /> للعميل
+                </div>
+                {[
+                  "متابعة المديونيات والأرصدة",
+                  "كشوف الحساب الفورية",
+                  "مقارنة الإنفاق بين التجار",
+                  "ميزانية شخصية ذكية",
+                ].map((f) => (
+                  <div key={f} className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <span className="text-sm font-medium">{f}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="bg-gradient-hero hover:opacity-90 text-lg px-8">
-                ابدأ التجربة المجانية
-                <ArrowLeft className="mr-2 w-5 h-5" />
+              <Button size="lg" className="bg-gradient-hero hover:opacity-90 text-lg px-8" asChild>
+                <a href="/admin/register?type=merchant">
+                  ابدأ كتاجر مجاناً
+                  <ArrowLeft className="mr-2 w-5 h-5" />
+                </a>
               </Button>
-              <Button size="lg" variant="outline" className="text-lg px-8">
-                <Play className="ml-2 w-5 h-5" />
-                شاهد الفيديو
+              <Button size="lg" variant="outline" className="text-lg px-8" asChild>
+                <a href="/admin/login">تسجيل الدخول</a>
               </Button>
             </div>
 
-            {/* Stats */}
-            <div className="flex flex-wrap gap-8 pt-4">
-              <div>
-                <div className="text-3xl font-bold text-gradient">+5000</div>
-                <div className="text-sm text-muted-foreground">تاجر نشط</div>
+            {/* Role Badges */}
+            <div className="flex flex-wrap gap-6 pt-2">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                <Store className="w-5 h-5 text-amber-500" />
+                <div>
+                  <div className="text-sm font-bold">حساب تاجر</div>
+                  <div className="text-xs text-muted-foreground">POS + محاسبة + مخزون</div>
+                </div>
               </div>
-              <div>
-                <div className="text-3xl font-bold text-gradient">+50K</div>
-                <div className="text-sm text-muted-foreground">معاملة يومياً</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold text-gradient">99.9%</div>
-                <div className="text-sm text-muted-foreground">دقة محاسبية</div>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                <Users className="w-5 h-5 text-blue-500" />
+                <div>
+                  <div className="text-sm font-bold">حساب عميل</div>
+                  <div className="text-xs text-muted-foreground">ديون + أرصدة + مقارنة</div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Hero Image/Illustration */}
+          {/* Hero Image — real system screenshots */}
           <div className="relative lg:block animate-scale-in" style={{ animationDelay: "0.2s" }}>
             <div className="relative rounded-2xl bg-gradient-hero p-1 hover-glow">
-              <div className="w-full rounded-xl bg-background/95 backdrop-blur-sm p-4 flex items-center justify-center overflow-hidden">
-                <img 
-                  src={dashboardPreview} 
-                  alt="لوحة تحكم النظام - عرض توضيحي" 
+              <div className="w-full rounded-xl bg-background/95 backdrop-blur-sm overflow-hidden">
+                <img
+                  src="/merchant/لوحة الإحصائيات.png"
+                  alt="لوحة إحصائيات النظام"
                   className="w-full h-auto rounded-lg shadow-xl"
                 />
               </div>
             </div>
-            
-            {/* Floating Stats Cards */}
-            <div className="absolute -top-4 -right-4 bg-card rounded-xl shadow-xl p-4 border border-border animate-float">
-              <div className="text-2xl font-bold text-success">↑ 24%</div>
-              <div className="text-xs text-muted-foreground">زيادة الإيرادات</div>
+
+            {/* Floating Badge — POS */}
+            <div className="absolute -top-4 -right-4 bg-card rounded-xl shadow-xl p-3 border border-border animate-float">
+              <div className="text-sm font-bold text-amber-500">🏪 POS</div>
+              <div className="text-xs text-muted-foreground">فاتورة في 3 ثوانٍ</div>
             </div>
-            
-            <div className="absolute -bottom-4 -left-4 bg-card rounded-xl shadow-xl p-4 border border-border animate-float" style={{ animationDelay: "1s" }}>
-              <div className="text-2xl font-bold text-primary flex items-center gap-1">
-                <Zap className="w-6 h-6 inline-block align-middle" /> سريع
-              </div>
-              <div className="text-xs text-muted-foreground">معالجة فورية</div>
+
+            {/* Floating Badge — Customer */}
+            <div className="absolute -bottom-4 -left-4 bg-card rounded-xl shadow-xl p-3 border border-border animate-float" style={{ animationDelay: "1s" }}>
+              <div className="text-sm font-bold text-blue-500">👤 عميل</div>
+              <div className="text-xs text-muted-foreground">متابعة الديون فورياً</div>
             </div>
           </div>
         </div>

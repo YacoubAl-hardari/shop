@@ -48,8 +48,9 @@ const Testimonials = () => {
   ];
 
   return (
-    <section id="testimonials" className="py-20 px-4 bg-muted/30">
-      <div className="container mx-auto">
+    <section id="testimonials" className="py-20 px-4 bg-muted/30 dark:bg-transparent relative overflow-hidden">
+      <div className="absolute inset-0 dark-mesh pointer-events-none" />
+      <div className="container mx-auto relative z-10">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16 animate-scale-in">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 rounded-full text-sm font-medium text-amber-500 mb-4">
@@ -69,7 +70,11 @@ const Testimonials = () => {
           {testimonials.map((testimonial, index) => (
             <div
               key={index}
-              className="card-gradient rounded-2xl p-6 border border-border hover-lift animate-scale-in relative bg-white/80 dark:bg-gradient-to-b dark:from-[#23272b] dark:to-[#181c20] dark:bg-[#181c20]/95 dark:border-[#2d3238] dark:shadow-2xl"
+              className="group relative rounded-2xl p-6 border border-border hover-lift animate-scale-in
+                bg-white dark:bg-[hsl(222,18%,13%)] dark:border-[hsl(225,25%,22%)]
+                dark:hover:border-[hsl(225,50%,45%)/30%]
+                dark:shadow-[0_4px_20px_hsl(222,18%,4%/0.5)]
+                dark:hover:shadow-[0_8px_32px_hsl(225,70%,60%/0.12)]"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               {/* Quote Icon */}
@@ -102,7 +107,7 @@ const Testimonials = () => {
 
         {/* Trust Score */}
         <div className="mt-16 text-center">
-          <div className="inline-flex flex-col items-center gap-3 bg-card rounded-2xl p-8 shadow-lg border border-border">
+          <div className="inline-flex flex-col items-center gap-3 bg-card rounded-2xl p-8 shadow-lg border border-border dark:bg-[hsl(222,18%,13%)] dark:border-[hsl(225,25%,22%)] dark:shadow-[0_8px_32px_hsl(222,18%,4%/0.6)]">
             <div className="flex gap-1">
               {[...Array(5)].map((_, i) => (
                 <Star key={i} className="w-8 h-8 fill-amber-400 text-amber-400" />

@@ -16,7 +16,7 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 220 10% 15%;
 
-    --primary: 220 13% 48%; /* Ã˜Â£Ã˜Â²Ã˜Â±Ã™â€š Ã˜Â±Ã™â€¦Ã˜Â§Ã˜Â¯Ã™Å  Ã™â€¡Ã˜Â§Ã˜Â¯Ã˜Â¦ Ã˜Â£Ã™Æ’Ã˜Â«Ã˜Â± */
+    --primary: 220 13% 48%;
     --primary-foreground: 0 0% 100%;
     --primary-hover: 220 13% 38%;
 
@@ -42,8 +42,8 @@ All colors MUST be HSL.
 
     --radius: 0.75rem;
 
-    /* Gradients: Ã˜Â£Ã™â€žÃ™Ë†Ã˜Â§Ã™â€  Ã˜Â§Ã™â€žÃ˜Â¹Ã™â€žÃ™â€¦ Ã˜Â§Ã™â€žÃ™Å Ã™â€¦Ã™â€ Ã™Å  */
-    --gradient-primary: linear-gradient(180deg, hsl(220,13%,60%) 0%, hsl(220,13%,48%) 60%, hsl(220,13%,38%) 100%); /* Ã˜Â£Ã˜Â²Ã˜Â±Ã™â€š Ã˜Â±Ã™â€¦Ã˜Â§Ã˜Â¯Ã™Å  Ã™â€¡Ã˜Â§Ã˜Â¯Ã˜Â¦ */
+    /* Light mode gradients */
+    --gradient-primary: linear-gradient(180deg, hsl(220,13%,60%) 0%, hsl(220,13%,48%) 60%, hsl(220,13%,38%) 100%);
     --gradient-secondary: linear-gradient(180deg, hsl(220,13%,60%) 0%, hsl(220,13%,48%) 60%, hsl(220,13%,38%) 100%);
     --gradient-hero: linear-gradient(180deg, hsl(220,13%,60%) 0%, hsl(220,13%,48%) 60%, hsl(220,13%,38%) 100%);
     --gradient-card: linear-gradient(180deg, #fff 0%, #f4f4f4 100%);
@@ -61,44 +61,69 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 220 10% 10%;
-    --foreground: 220 10% 98%;
+    /* ── Deep, rich dark background ── */
+    --background: 222 18% 9%;
+    --foreground: 210 30% 96%;
 
-    --card: 220 10% 12%;
-    --card-foreground: 220 10% 98%;
+    --card: 222 16% 12%;
+    --card-foreground: 210 30% 96%;
 
-    --popover: 220 10% 12%;
-    --popover-foreground: 220 10% 98%;
+    --popover: 222 16% 12%;
+    --popover-foreground: 210 30% 96%;
 
-    --primary: 220 13% 38%;
+    /* ── Vibrant indigo-blue primary ── */
+    --primary: 225 70% 60%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 220 13% 28%;
+    --primary-hover: 225 70% 50%;
 
-    --secondary: 220 10% 18%;
-    --secondary-foreground: 220 10% 85%;
-    --secondary-hover: 220 10% 23%;
+    /* ── Soft purple secondary ── */
+    --secondary: 250 30% 22%;
+    --secondary-foreground: 250 60% 80%;
+    --secondary-hover: 250 30% 28%;
 
-    --success: 140 4% 40%;
+    /* ── Vivid emerald success ── */
+    --success: 155 65% 48%;
     --success-foreground: 0 0% 100%;
 
-    --muted: 220 10% 18%;
-    --muted-foreground: 220 10% 65%;
+    --muted: 222 16% 16%;
+    --muted-foreground: 215 20% 60%;
 
-    --accent: 220 10% 20%;
-    --accent-foreground: 220 10% 60%;
+    --accent: 225 25% 18%;
+    --accent-foreground: 225 60% 75%;
 
-    --destructive: 0 0% 40%;
+    --destructive: 0 65% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 10% 22%;
-    --input: 220 10% 22%;
-    --ring: 220 10% 40%;
+    --border: 222 16% 20%;
+    --input: 222 16% 20%;
+    --ring: 225 70% 55%;
 
-    --shadow-sm: 0 2px 8px hsl(220 10% 0% / 0.3);
-    --shadow-md: 0 4px 16px hsl(220 10% 0% / 0.4);
-    --shadow-lg: 0 8px 24px hsl(220 10% 0% / 0.5);
-    --shadow-xl: 0 16px 48px hsl(220 10% 0% / 0.6);
-    --shadow-glow: 0 0 40px hsl(215 85% 55% / 0.4);
+    /* ── Dark mode gradients — vivid and rich ── */
+    --gradient-primary: linear-gradient(135deg,
+      hsl(225, 70%, 65%) 0%,
+      hsl(240, 60%, 55%) 50%,
+      hsl(260, 55%, 50%) 100%
+    );
+    --gradient-secondary: linear-gradient(135deg,
+      hsl(250, 60%, 55%) 0%,
+      hsl(270, 55%, 45%) 100%
+    );
+    --gradient-hero: linear-gradient(135deg,
+      hsl(225, 65%, 55%) 0%,
+      hsl(245, 60%, 48%) 50%,
+      hsl(265, 55%, 42%) 100%
+    );
+    --gradient-card: linear-gradient(160deg,
+      hsl(222, 20%, 14%) 0%,
+      hsl(222, 16%, 11%) 100%
+    );
+
+    /* ── Deep shadows ── */
+    --shadow-sm: 0 2px 8px hsl(222 18% 4% / 0.40);
+    --shadow-md: 0 4px 16px hsl(222 18% 4% / 0.55);
+    --shadow-lg: 0 8px 24px hsl(222 18% 4% / 0.65);
+    --shadow-xl: 0 16px 48px hsl(222 18% 4% / 0.75);
+    --shadow-glow: 0 0 40px hsl(225 70% 60% / 0.45);
   }
 }
 
@@ -163,12 +188,38 @@ All colors MUST be HSL.
 }
 
 @layer utilities {
+  /* ── Light mode: subtle gradient text ── */
   .text-gradient {
     @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
   }
 
+  /* ── Dark mode: vivid indigo-purple gradient text ── */
+  .dark .text-gradient {
+    background: linear-gradient(90deg,
+      hsl(220, 80%, 72%) 0%,
+      hsl(270, 70%, 70%) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
   .card-gradient {
     background: var(--gradient-card);
+  }
+
+  /* ── Dark card: rich layered surface ── */
+  .dark .card-gradient {
+    background: var(--gradient-card);
+    border-color: hsl(222 16% 22%);
+  }
+
+  /* ── Subtle grid pattern for dark sections ── */
+  .dark-mesh {
+    background-image:
+      radial-gradient(circle at 20% 20%, hsl(225 70% 60% / 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, hsl(260 60% 55% / 0.06) 0%, transparent 50%),
+      radial-gradient(circle at 50% 50%, hsl(240 50% 50% / 0.04) 0%, transparent 70%);
   }
 
   .animate-float {
@@ -179,24 +230,23 @@ All colors MUST be HSL.
     animation: scale-in 0.5s ease-out;
   }
 
+  .animate-fade-in {
+    animation: fade-in 0.6s ease-out both;
+  }
+
   @keyframes float {
-    0%, 100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-20px);
-    }
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
   }
 
   @keyframes scale-in {
-    from {
-      opacity: 0;
-      transform: scale(0.9);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
+    from { opacity: 0; transform: scale(0.9); }
+    to   { opacity: 1; transform: scale(1);   }
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0);    }
   }
 
   .hover-lift {
@@ -204,6 +254,20 @@ All colors MUST be HSL.
   }
 
   .hover-glow {
-    @apply transition-all duration-300 hover:shadow-[0_0_20px_rgba(59,130,246,0.5)];
+    @apply transition-all duration-300 hover:shadow-[0_0_20px_rgba(99,102,241,0.5)];
+  }
+
+  /* ── Dark mode hover-glow with vivid indigo ── */
+  .dark .hover-glow {
+    @apply hover:shadow-[0_0_30px_rgba(99,102,241,0.4)];
+  }
+
+  /* ── Glassmorphism for dark mode cards ── */
+  .dark .glass-card {
+    background: hsl(222 20% 14% / 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(225 30% 25% / 0.5);
+    box-shadow: 0 8px 32px hsl(222 18% 4% / 0.5),
+                inset 0 1px 0 hsl(225 60% 60% / 0.1);
   }
 }
