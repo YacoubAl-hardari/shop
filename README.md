@@ -1,4 +1,4 @@
-# 🛒 نظام إدارة حسابات التجار والعملاء
+# 🛒 1.0.4 نظام إدارة حسابات التجار والعملاء
 
 <img width="400" height="400" alt="screencapture-shop-test" src="screencapture-shop-test-2026-06-04-22_59_43.png" />
 
