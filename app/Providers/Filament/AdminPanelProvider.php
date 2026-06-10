@@ -5,16 +5,17 @@ namespace App\Providers\Filament;
 use App\Filament\Pages\Auth\Register;
 use App\Filament\Pages\Dashboard as UserDashboard;
 use App\Filament\Pages\MerchantStatisticsDashboard;
-use App\Filament\Resources\Accounts\Pages\ManageAccountsTree;
 use App\Filament\Pages\Tenancy\EditTeamProfile;
 use App\Filament\Pages\Tenancy\RegisterTeam;
+use App\Filament\Resources\Accounts\Pages\ManageAccountsTree;
 use App\Http\Middleware\ApplyTenantScopes;
 use App\Models\Team;
+use Filament\Enums\DatabaseNotificationsPosition;
+use Filament\FontProviders\LocalFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Enums\DatabaseNotificationsPosition;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -84,9 +85,16 @@ class AdminPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
+            ->maxContentWidth(Width::Full)
+            ->sidebarFullyCollapsibleOnDesktop()
             ->authMiddleware([
                 Authenticate::class,
             ])
+            ->font(
+                'JannaLT',
+                url: asset('css/janna-font.css'),
+                provider: LocalFontProvider::class
+            )
             ->tenantMiddleware([
                 ApplyTenantScopes::class,
             ], isPersistent: true)

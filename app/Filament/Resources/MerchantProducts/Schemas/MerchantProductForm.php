@@ -28,7 +28,20 @@ class MerchantProductForm
                         ->label('الباركود / QR')
                         ->maxLength(255)
                         ->icon('heroicon-o-qr-code')
-                        ->helperText('امسح الرمز أو أدخله يدوياً'),
+                        ->helperText('امسح الرمز أو أدخله يدوياً')
+                        ->nullable()
+                        ->unique(
+                            table: 'merchant_products',
+                            column: 'barcode',
+                            ignoreRecord: true,
+                            modifyRuleUsing: function (\Illuminate\Validation\Rules\Unique $rule) {
+                                $tenant = \Filament\Facades\Filament::getTenant();
+                                return $tenant ? $rule->where('team_id', $tenant->id) : $rule;
+                            }
+                        )
+                        ->validationMessages([
+                            'unique' => 'رقم الباركود هذا مسجل مسبقاً لمنتج آخر.',
+                        ]),
                     TextInput::make('sku')
                         ->label('رمز المنتج الداخلي')
                         ->helperText('اختياري — للتصنيف الداخلي'),

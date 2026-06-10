@@ -39,10 +39,22 @@ class UserMerchantProductForm
                 ->required(),
 
                 QrCodeInput::make('barcode')
-                ->label('الباركود')
-                ->maxLength(255)
-                ->required()
-                ->icon('heroicon-o-qr-code'),
+                    ->label('الباركود')
+                    ->maxLength(255)
+                    ->required()
+                    ->icon('heroicon-o-qr-code')
+                    ->unique(
+                        table: 'user_merchant_products',
+                        column: 'barcode',
+                        ignoreRecord: true,
+                        modifyRuleUsing: function (\Illuminate\Validation\Rules\Unique $rule) {
+                            $tenant = \Filament\Facades\Filament::getTenant();
+                            return $tenant ? $rule->where('team_id', $tenant->id) : $rule;
+                        }
+                    )
+                    ->validationMessages([
+                        'unique' => 'رقم الباركود هذا مسجل مسبقاً لمنتج آخر.',
+                    ]),
 
           Section::make('معلومات المنتج')
           ->label('معلومات المنتج')

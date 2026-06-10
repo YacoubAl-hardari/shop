@@ -51,6 +51,10 @@ class PosTerminal extends Page implements HasForms
 
     public ?array $data = [];
 
+    public string $search = '';
+
+    public string $barcode = '';
+
     public static function getNavigationGroup(): ?string
     {
         return 'المبيعات';
@@ -65,261 +69,166 @@ class PosTerminal extends Page implements HasForms
     {
         return $form
             ->schema([
-                Grid::make()
-                    ->columns(['default' => 1, 'xl' => 3])
+                Repeater::make('items')
                     ->schema([
-                        Grid::make()
-                            ->columnSpan(['default' => 1, 'xl' => 2])
-                            ->schema([
-                                Section::make('سلة المبيعات')
-                                    ->description('الأصناف المضافة للفاتورة الحالية')
-                                    ->icon(Heroicon::OutlinedShoppingCart)
-                                    ->schema([
-                                        Repeater::make('items')
-                                            ->label('الأصناف')
-                                            ->live()
-                                            ->defaultItems(1)
-                                            ->addActionLabel('إضافة صنف')
-                                            ->reorderable(false)
-                                            ->collapsible()
-                                            ->itemLabel(fn (array $state): string => $state['product_name'] ?? 'صنف جديد')
-                                            ->schema([
-                                                Toggle::make('use_barcode_search')
-                                                    ->label('البحث بالباركود')
-                                                    ->default(false)
-                                                    ->live()
-                                                    ->columnSpanFull(),
+                        TextInput::make('merchant_product_id')->numeric(),
+                        TextInput::make('product_name')->required(),
+                        TextInput::make('quantity')->numeric()->required(),
+                        TextInput::make('unit_price')->numeric()->required(),
+                    ])
+                    ->extraAttributes(['class' => 'hidden'])
+                    ->hiddenLabel()
+                    ->dehydrated(true),
 
-                                                Select::make('merchant_product_id')
-                                                    ->label('المنتج')
-                                                    ->options(fn () => MerchantProduct::query()
-                                                        ->where('is_active', true)
-                                                        ->orderBy('name')
-                                                        ->pluck('name', 'id'))
-                                                    ->searchable()
-                                                    ->preload()
-                                                    ->live()
-                                                    ->visible(fn (Get $get): bool => ! $get('use_barcode_search'))
-                                                    ->afterStateUpdated(function ($state, Set $set): void {
-                                                        if (! $state) {
-                                                            return;
-                                                        }
+                Section::make('الدفع والتسوية')
+                    ->description('بيانات العميل وطريقة السداد')
+                    ->icon(Heroicon::OutlinedBanknotes)
+                    ->schema([
+                        Select::make('merchant_customer_id')
+                            ->label('العميل')
+                            ->options(fn () => MerchantCustomer::query()
+                                ->where('team_id', Filament::getTenant()->id)
+                                ->pluck('name', 'id'))
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->required(fn (Get $get): bool => in_array($get('payment_type'), [
+                                SalePaymentType::CREDIT->value,
+                                SalePaymentType::PARTIAL->value,
+                            ], true))
+                            ->helperText(fn (Get $get): ?string => in_array($get('payment_type'), [
+                                SalePaymentType::CREDIT->value,
+                                SalePaymentType::PARTIAL->value,
+                            ], true)
+                                ? 'إلزامي للبيع الآجل أو الجزئي لتسجيل الذمة وكشف الحساب'
+                                : null)
+                            ->afterStateUpdated(function ($state, Set $set): void {
+                                if (! $state) {
+                                    $set('apply_customer_credit', false);
 
-                                                        $product = MerchantProduct::find($state);
+                                    return;
+                                }
 
-                                                        if ($product) {
-                                                            $set('product_name', $product->name);
-                                                            $set('unit_price', (float) $product->price);
-                                                        }
-                                                    }),
-
-                                                QrCodeInput::make('barcode_search')
-                                                    ->label('مسح الباركود')
-                                                    ->live(debounce: 400)
-                                                    ->icon('heroicon-o-qr-code')
-                                                    ->visible(fn (Get $get): bool => $get('use_barcode_search') && ! $get('merchant_product_id'))
-                                                    ->afterStateUpdated(fn (?string $state, Set $set) => $this->handleRepeaterBarcodeScan($state, $set)),
-
-                                                TextInput::make('product_name')
-                                                    ->label(fn (Get $get): string => $get('use_barcode_search') && $get('merchant_product_id')
-                                                        ? 'المنتج المختار'
-                                                        : 'اسم المنتج')
-                                                    ->required()
-                                                    ->disabled(fn (Get $get): bool => $get('use_barcode_search') && (bool) $get('merchant_product_id'))
-                                                    ->dehydrated(true)
-                                                    ->visible(fn (Get $get): bool => ! $get('use_barcode_search') || (bool) $get('merchant_product_id'))
-                                                    ->suffixAction(
-                                                        Action::make('reset_barcode_search')
-                                                            ->label('تغيير')
-                                                            ->icon(Heroicon::OutlinedArrowPath)
-                                                            ->visible(fn (Get $get): bool => $get('use_barcode_search') && (bool) $get('merchant_product_id'))
-                                                            ->action(function (Set $set): void {
-                                                                $set('merchant_product_id', null);
-                                                                $set('barcode_search', null);
-                                                                $set('product_name', null);
-                                                                $set('unit_price', null);
-                                                            }),
-                                                    ),
-
-                                                TextInput::make('quantity')
-                                                    ->label('الكمية')
-                                                    ->numeric()
-                                                    ->default(1)
-                                                    ->minValue(0.01)
-                                                    ->validationMessages([
-                                                        'min' => 'يجب أن تكون الكمية أكبر من الصفر.',
-                                                    ])
-                                                    ->required()
-                                                    ->live(),
-
-                                                TextInput::make('unit_price')
-                                                    ->label('السعر')
-                                                    ->numeric()
-                                                    ->prefix('ر.س')
-                                                    ->minValue(0.01)
-                                                    ->validationMessages([
-                                                        'min' => 'يجب أن يكون السعر أكبر من الصفر.',
-                                                    ])
-                                                    ->required()
-                                                    ->live(),
-                                            ])
-                                            ->columns(['default' => 1, 'md' => 4])
-                                            ->columnSpanFull(),
-                                    ])
-                                    ->columnSpanFull()
-                                    ,
-                            ]),
-
-                        Section::make('الدفع والتسوية')
-                            ->description('بيانات العميل وطريقة السداد')
-                            ->icon(Heroicon::OutlinedBanknotes)
-                            ->columnSpan(['default' => 1, 'xl' => 1])
-                            ->schema([
-                                Select::make('merchant_customer_id')
-                                    ->label('العميل')
-                                    ->options(fn () => MerchantCustomer::query()->pluck('name', 'id'))
-                                    ->searchable()
-                                    ->preload()
-                                    ->live()
-                                    ->required(fn (Get $get): bool => in_array($get('payment_type'), [
-                                        SalePaymentType::CREDIT->value,
-                                        SalePaymentType::PARTIAL->value,
-                                    ], true))
-                                    ->helperText(fn (Get $get): ?string => in_array($get('payment_type'), [
-                                        SalePaymentType::CREDIT->value,
-                                        SalePaymentType::PARTIAL->value,
-                                    ], true)
-                                        ? 'إلزامي للبيع الآجل أو الجزئي لتسجيل الذمة وكشف الحساب'
-                                        : null)
-                                    ->afterStateUpdated(function ($state, Set $set): void {
-                                        if (! $state) {
-                                            $set('apply_customer_credit', false);
-
-                                            return;
-                                        }
-
-                                        $customer = MerchantCustomer::find($state);
-                                        $set('apply_customer_credit', $customer?->hasPrepaidBalance() ?? false);
-                                    })
-                                    ->createOptionForm([
-                                        TextInput::make('name')->label('الاسم')->required(),
-                                        TextInput::make('phone')->label('الهاتف'),
-                                    ])
-                                    ->createOptionUsing(fn (array $data) => MerchantCustomer::create($data)->id),
-
-                                Placeholder::make('customer_account_summary')
-                                    ->label('حساب العميل')
-                                    ->visible(fn (Get $get): bool => filled($get('merchant_customer_id')))
-                                    ->content(function (Get $get): string {
-                                        $customer = $this->getSelectedCustomer($get('merchant_customer_id'));
-
-                                        if (! $customer) {
-                                            return '—';
-                                        }
-
-                                        $parts = [];
-
-                                        if ($customer->hasDebt()) {
-                                            $parts[] = 'مديونية: '.number_format($customer->debtBalance(), 2).' ر.س';
-                                        }
-
-                                        if ($customer->hasPrepaidBalance()) {
-                                            $parts[] = 'رصيد فائض: '.number_format($customer->prepaidBalance(), 2).' ر.س';
-                                        }
-
-                                        return $parts === [] ? 'لا توجد مديونية أو رصيد فائض' : implode(' | ', $parts);
-                                    })
-                                    ->columnSpanFull(),
-
-                                Toggle::make('apply_customer_credit')
-                                    ->label('خصم الرصيد الفائض من الفاتورة')
-                                    ->helperText(fn (Get $get): ?string => $this->getSelectedCustomer($get('merchant_customer_id'))?->hasPrepaidBalance()
-                                        ? 'يُخصم تلقائياً من المبلغ المستحق على العميل'
-                                        : null)
-                                    ->default(false)
-                                    ->live()
-                                    ->visible(fn (Get $get): bool => $this->getSelectedCustomer($get('merchant_customer_id'))?->hasPrepaidBalance() ?? false)
-                                    ->columnSpanFull(),
-
-                                Select::make('payment_type')
-                                    ->label('نوع الدفع')
-                                    ->options(SalePaymentType::options())
-                                    ->required()
-                                    ->live()
-                                    ->default(SalePaymentType::CASH->value),
-
-                                TextInput::make('paid_amount')
-                                    ->label('المبلغ المدفوع')
-                                    ->numeric()
-                                    ->prefix('ر.س')
-                                    ->live()
-                                    ->required(fn (Get $get): bool => $get('payment_type') === SalePaymentType::PARTIAL->value)
-                                    ->minValue(0.01)
-                                    ->maxValue(fn (Get $get): ?float => $this->maxPartialPaidAmount([
-                                        'items' => $get('items') ?? [],
-                                        'merchant_customer_id' => $get('merchant_customer_id'),
-                                        'apply_customer_credit' => $get('apply_customer_credit'),
-                                    ]))
-                                    ->validationMessages([
-                                        'max' => 'المبلغ المدفوع للبيع الجزئي يجب أن يكون أقل من صافي قيمة الفاتورة (:max).',
-                                    ])
-                                    ->visible(fn (Get $get): bool => $get('payment_type') === SalePaymentType::PARTIAL->value),
-
-                                Section::make('تفاصيل الدفع')
-                                    ->visible(fn (Get $get): bool => $get('payment_type') !== SalePaymentType::CREDIT->value
-                                        && $this->netSaleTotal([
-                                            'items' => $get('items') ?? [],
-                                            'merchant_customer_id' => $get('merchant_customer_id'),
-                                            'apply_customer_credit' => $get('apply_customer_credit'),
-                                        ]) > 0)
-                                    ->schema([
-                                        PaymentDetailsSchema::methodSelect(),
-                                        PaymentDetailsSchema::accountSelect(),
-                                        PaymentDetailsSchema::accountPreview(),
-                                        PaymentDetailsSchema::referenceInput(),
-                                    ])
-                                    ->columns(1)
-                                    ->columnSpanFull(),
-
-                                Placeholder::make('cart_subtotal')
-                                    ->label('إجمالي الفاتورة')
-                                    ->columnSpanFull()
-                                    ->content(fn (Get $get): string => number_format($this->calculateTotal($get('items') ?? []), 2).' ر.س')
-                                    ->extraAttributes(['class' => 'text-2xl font-bold text-primary-600']),
-
-                                Placeholder::make('customer_credit_deduction')
-                                    ->label('خصم الرصيد الفائض')
-                                    ->visible(fn (Get $get): bool => $this->calculateCreditApplied([
-                                        'items' => $get('items') ?? [],
-                                        'merchant_customer_id' => $get('merchant_customer_id'),
-                                        'apply_customer_credit' => $get('apply_customer_credit'),
-                                    ]) > 0)
-                                    ->content(fn (Get $get): string => '- '.number_format($this->calculateCreditApplied([
-                                        'items' => $get('items') ?? [],
-                                        'merchant_customer_id' => $get('merchant_customer_id'),
-                                        'apply_customer_credit' => $get('apply_customer_credit'),
-                                    ]), 2).' ر.س')
-                                    ->columnSpanFull(),
-
-                                Placeholder::make('amount_due')
-                                    ->label('المبلغ المستحق')
-                                    ->columnSpanFull()
-                                    ->content(fn (Get $get): string => number_format($this->netSaleTotal([
-                                        'items' => $get('items') ?? [],
-                                        'merchant_customer_id' => $get('merchant_customer_id'),
-                                        'apply_customer_credit' => $get('apply_customer_credit'),
-                                    ]), 2).' ر.س')
-                                    ->extraAttributes(['class' => 'text-xl font-semibold']),
-
-                                Textarea::make('notes')
-                                    ->label('ملاحظات')
-                                    ->columnSpanFull()
-                                    ->rows(3),
+                                $customer = MerchantCustomer::find($state);
+                                $set('apply_customer_credit', $customer?->hasPrepaidBalance() ?? false);
+                            })
+                            ->createOptionForm([
+                                TextInput::make('name')->label('الاسم')->required(),
+                                TextInput::make('phone')->label('الهاتف'),
                             ])
-                            ->columns(2)
+                            ->createOptionUsing(fn (array $data) => MerchantCustomer::create($data)->id),
+
+                        Placeholder::make('customer_account_summary')
+                            ->label('حساب العميل')
+                            ->visible(fn (Get $get): bool => filled($get('merchant_customer_id')))
+                            ->content(function (Get $get): string {
+                                $customer = $this->getSelectedCustomer($get('merchant_customer_id'));
+
+                                if (! $customer) {
+                                    return '—';
+                                }
+
+                                $parts = [];
+
+                                if ($customer->hasDebt()) {
+                                    $parts[] = 'مديونية: '.number_format($customer->debtBalance(), 2).' ر.س';
+                                }
+
+                                if ($customer->hasPrepaidBalance()) {
+                                    $parts[] = 'رصيد فائض: '.number_format($customer->prepaidBalance(), 2).' ر.س';
+                                }
+
+                                return $parts === [] ? 'لا توجد مديونية أو رصيد فائض' : implode(' | ', $parts);
+                            })
+                            ->columnSpanFull(),
+
+                        Toggle::make('apply_customer_credit')
+                            ->label('خصم الرصيد الفائض من الفاتورة')
+                            ->helperText(fn (Get $get): ?string => $this->getSelectedCustomer($get('merchant_customer_id'))?->hasPrepaidBalance()
+                                ? 'يُخصم تلقائياً من المبلغ المستحق على العميل'
+                                : null)
+                            ->default(false)
+                            ->live()
+                            ->visible(fn (Get $get): bool => $this->getSelectedCustomer($get('merchant_customer_id'))?->hasPrepaidBalance() ?? false)
+                            ->columnSpanFull(),
+
+                        Select::make('payment_type')
+                            ->label('نوع الدفع')
+                            ->options(SalePaymentType::options())
+                            ->required()
+                            ->live()
+                            ->default(SalePaymentType::CASH->value),
+
+                        TextInput::make('paid_amount')
+                            ->label('المبلغ المدفوع')
+                            ->numeric()
+                            ->prefix('ر.س')
+                            ->live()
+                            ->required(fn (Get $get): bool => $get('payment_type') === SalePaymentType::PARTIAL->value)
+                            ->minValue(0.01)
+                            ->maxValue(fn (Get $get): ?float => $this->maxPartialPaidAmount([
+                                'items' => $get('items') ?? [],
+                                'merchant_customer_id' => $get('merchant_customer_id'),
+                                'apply_customer_credit' => $get('apply_customer_credit'),
+                            ]))
+                            ->validationMessages([
+                                'max' => 'المبلغ المدفوع للبيع الجزئي يجب أن يكون أقل من صافي قيمة الفاتورة (:max).',
+                            ])
+                            ->visible(fn (Get $get): bool => $get('payment_type') === SalePaymentType::PARTIAL->value),
+
+                        Section::make('تفاصيل الدفع')
+                            ->visible(fn (Get $get): bool => $get('payment_type') !== SalePaymentType::CREDIT->value
+                                && $this->netSaleTotal([
+                                    'items' => $get('items') ?? [],
+                                    'merchant_customer_id' => $get('merchant_customer_id'),
+                                    'apply_customer_credit' => $get('apply_customer_credit'),
+                                ]) > 0)
+                            ->schema([
+                                PaymentDetailsSchema::methodSelect(),
+                                PaymentDetailsSchema::accountSelect(),
+                                PaymentDetailsSchema::accountPreview(),
+                                PaymentDetailsSchema::referenceInput(),
+                            ])
+                            ->columns(1)
+                            ->columnSpanFull(),
+
+                        Placeholder::make('cart_subtotal')
+                            ->label('إجمالي الفاتورة')
                             ->columnSpanFull()
-                            ,
-                    ]),
+                            ->content(fn (Get $get): string => number_format($this->calculateTotal($get('items') ?? []), 2).' ر.س')
+                            ->extraAttributes(['class' => 'text-2xl font-bold text-primary-600']),
+
+                        Placeholder::make('customer_credit_deduction')
+                            ->label('خصم الرصيد الفائض')
+                            ->visible(fn (Get $get): bool => $this->calculateCreditApplied([
+                                'items' => $get('items') ?? [],
+                                'merchant_customer_id' => $get('merchant_customer_id'),
+                                'apply_customer_credit' => $get('apply_customer_credit'),
+                            ]) > 0)
+                            ->content(fn (Get $get): string => '- '.number_format($this->calculateCreditApplied([
+                                'items' => $get('items') ?? [],
+                                'merchant_customer_id' => $get('merchant_customer_id'),
+                                'apply_customer_credit' => $get('apply_customer_credit'),
+                            ]), 2).' ر.س')
+                            ->columnSpanFull(),
+
+                        Placeholder::make('amount_due')
+                            ->label('المبلغ المستحق')
+                            ->columnSpanFull()
+                            ->content(fn (Get $get): string => number_format($this->netSaleTotal([
+                                'items' => $get('items') ?? [],
+                                'merchant_customer_id' => $get('merchant_customer_id'),
+                                'apply_customer_credit' => $get('apply_customer_credit'),
+                            ]), 2).' ر.س')
+                            ->extraAttributes(['class' => 'text-xl font-semibold']),
+
+                        Textarea::make('notes')
+                            ->label('ملاحظات')
+                            ->columnSpanFull()
+                            ->rows(3),
+                    ])
+                    ->columns(['default' => 1, 'sm' => 2])
+                    ->columnSpanFull(),
             ])
             ->statePath('data');
     }
@@ -391,44 +300,192 @@ class PosTerminal extends Page implements HasForms
             'payment_method' => 'cash',
             'apply_customer_credit' => false,
             'quick_barcode' => null,
-            'items' => [
-                [
-                    'quantity' => 1,
-                    'use_barcode_search' => false,
-                ],
-            ],
+            'items' => [],
         ]);
     }
 
-    protected function handleRepeaterBarcodeScan(?string $state, Set $set): void
+    public function addProduct(int $productId): void
     {
-        $code = $this->normalizeBarcode($state);
+        $product = MerchantProduct::find($productId);
 
-        if ($code === null) {
+        if (! $product) {
+            Notification::make()
+                ->title('خطأ')
+                ->body('المنتج غير موجود')
+                ->danger()
+                ->send();
+
             return;
         }
 
-        // تجاهل الإدخال الجزئي أثناء المسح — لا تنبيه ولا بحث
-        if (strlen($code) < 3) {
+        $this->appendProductToCart($product);
+    }
+
+    public function appendProductToCart(MerchantProduct $product): void
+    {
+        $items = $this->data['items'] ?? [];
+        $found = false;
+
+        foreach ($items as $index => $item) {
+            if (($item['merchant_product_id'] ?? null) == $product->id) {
+                // Check stock
+                $newQty = ($item['quantity'] ?? 1) + 1;
+                if ($newQty > (float) $product->stock_quantity) {
+                    Notification::make()
+                        ->title('تجاوز الحد المتاح')
+                        ->body("الكمية المطلوبة للمنتج ({$product->name}) غير متوفرة في المخزن")
+                        ->warning()
+                        ->send();
+
+                    return;
+                }
+                $items[$index]['quantity'] = $newQty;
+                $found = true;
+                break;
+            }
+        }
+
+        if (! $found) {
+            // Check stock for 1 unit
+            if (1 > (float) $product->stock_quantity) {
+                Notification::make()
+                    ->title('نفذت الكمية')
+                    ->body("المنتج ({$product->name}) غير متوفر في المخزن")
+                    ->warning()
+                    ->send();
+
+                return;
+            }
+
+            $items[] = [
+                'merchant_product_id' => $product->id,
+                'product_name' => $product->name,
+                'quantity' => 1,
+                'unit_price' => (float) $product->price,
+            ];
+        }
+
+        $this->data['items'] = array_values($items);
+
+        Notification::make()
+            ->title('تم إضافة المنتج')
+            ->body($product->name)
+            ->success()
+            ->send();
+    }
+
+    public function incrementQuantity(int $index): void
+    {
+        if (! isset($this->data['items'][$index])) {
+            return;
+        }
+
+        $item = $this->data['items'][$index];
+        $productId = $item['merchant_product_id'] ?? null;
+
+        if ($productId) {
+            $product = MerchantProduct::find($productId);
+            if ($product) {
+                $newQty = ($item['quantity'] ?? 1) + 1;
+                if ($newQty > (float) $product->stock_quantity) {
+                    Notification::make()
+                        ->title('تجاوز الحد المتاح')
+                        ->body("الكمية المطلوبة للمنتج ({$product->name}) غير متوفرة في المخزن")
+                        ->warning()
+                        ->send();
+
+                    return;
+                }
+            }
+        }
+
+        $this->data['items'][$index]['quantity'] = ($item['quantity'] ?? 1) + 1;
+    }
+
+    public function decrementQuantity(int $index): void
+    {
+        if (! isset($this->data['items'][$index])) {
+            return;
+        }
+
+        $item = $this->data['items'][$index];
+        $newQty = ($item['quantity'] ?? 1) - 1;
+
+        if ($newQty <= 0) {
+            $this->removeItem($index);
+
+            return;
+        }
+
+        $this->data['items'][$index]['quantity'] = $newQty;
+    }
+
+    public function removeItem(int $index): void
+    {
+        if (! isset($this->data['items'][$index])) {
+            return;
+        }
+
+        unset($this->data['items'][$index]);
+        $this->data['items'] = array_values($this->data['items']);
+    }
+
+    public function clearCart(): void
+    {
+        $this->data['items'] = [];
+
+        Notification::make()
+            ->title('تم إفراغ السلة')
+            ->success()
+            ->send();
+    }
+
+    public function scanBarcode(): void
+    {
+        $code = $this->normalizeBarcode($this->barcode);
+        $this->barcode = ''; // Clear immediately
+
+        if ($code === null) {
+            $this->dispatch('focus-barcode');
+
             return;
         }
 
         $product = $this->findProductByCode($code);
 
         if ($product) {
-            $set('merchant_product_id', $product->id);
-            $set('product_name', $product->name);
-            $set('unit_price', (float) $product->price);
-            $set('barcode_search', null);
-
-            return;
+            $this->appendProductToCart($product);
+        } else {
+            Notification::make()
+                ->title('منتج غير موجود')
+                ->body('لم يتم العثور على منتج بهذا الباركود أو الرمز: '.$code)
+                ->danger()
+                ->send();
         }
 
-        Notification::make()
-            ->title('منتج غير موجود')
-            ->body('لم يتم العثور على منتج بهذا الباركود أو الرمز')
-            ->warning()
-            ->send();
+        $this->dispatch('focus-barcode');
+    }
+
+    public function getProducts()
+    {
+        $tenant = Filament::getTenant();
+        if (! $tenant) {
+            return collect();
+        }
+
+        $query = MerchantProduct::query()
+            ->where('team_id', $tenant->id)
+            ->where('is_active', true);
+
+        if (filled($this->search)) {
+            $query->where(function ($q) {
+                $q->where('name', 'like', '%'.$this->search.'%')
+                    ->orWhere('sku', 'like', '%'.$this->search.'%')
+                    ->orWhere('barcode', 'like', '%'.$this->search.'%');
+            });
+        }
+
+        return $query->orderBy('name')->get();
     }
 
     protected function normalizeBarcode(?string $code): ?string
@@ -446,8 +503,14 @@ class PosTerminal extends Page implements HasForms
     protected function findProductByCode(string $code): ?MerchantProduct
     {
         $code = $this->normalizeBarcode($code) ?? $code;
+        $tenant = Filament::getTenant();
+
+        if (! $tenant) {
+            return null;
+        }
 
         return MerchantProduct::query()
+            ->where('team_id', $tenant->id)
             ->where('is_active', true)
             ->where(function ($query) use ($code): void {
                 $query->where('barcode', $code)
@@ -456,33 +519,6 @@ class PosTerminal extends Page implements HasForms
             ->first();
     }
 
-    protected function appendProductToCart(Set $set, Get $get, MerchantProduct $product): void
-    {
-        $items = $get('items') ?? [];
-
-        foreach ($items as $index => $item) {
-            if (($item['merchant_product_id'] ?? null) == $product->id) {
-                $items[$index]['quantity'] = ($items[$index]['quantity'] ?? 1) + 1;
-                $set('items', array_values($items));
-
-                return;
-            }
-        }
-
-        $items[] = [
-            'merchant_product_id' => $product->id,
-            'product_name' => $product->name,
-            'quantity' => 1,
-            'unit_price' => $product->price,
-            'use_barcode_search' => false,
-        ];
-
-        $set('items', array_values($items));
-    }
-
-    /**
-     * @param  array<int, array<string, mixed>>  $items
-     */
     protected function calculateTotal(array $items): float
     {
         return (float) collect($items)->sum(
@@ -499,9 +535,6 @@ class PosTerminal extends Page implements HasForms
         return MerchantCustomer::find($customerId);
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
     protected function calculateCreditApplied(array $data): float
     {
         if (empty($data['merchant_customer_id']) || ! ($data['apply_customer_credit'] ?? false)) {
@@ -519,9 +552,6 @@ class PosTerminal extends Page implements HasForms
         return min($customer->prepaidBalance(), $total);
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
     protected function netSaleTotal(array $data): float
     {
         $total = $this->calculateTotal($data['items'] ?? []);
@@ -529,9 +559,6 @@ class PosTerminal extends Page implements HasForms
         return max(0, $total - $this->calculateCreditApplied($data));
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
     protected function maxPartialPaidAmount(array $data): ?float
     {
         $net = $this->netSaleTotal($data);
@@ -543,10 +570,6 @@ class PosTerminal extends Page implements HasForms
         return round($net - 0.01, 2);
     }
 
-    /**
-     * @param  array<int, array<string, mixed>>  $items
-     * @return array<int, array<string, mixed>>
-     */
     protected function validItems(array $items): array
     {
         return collect($items)
@@ -557,9 +580,6 @@ class PosTerminal extends Page implements HasForms
             ->all();
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
     protected function validateSaleData(array $data): ?string
     {
         $items = $this->validItems($data['items'] ?? []);

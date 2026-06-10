@@ -1,0 +1,52 @@
+@font-face {
+    font-family: 'JannaLT';
+    src: url('../fonts/GraphikArabic-Regular.woff') format('woff');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'JannaLT';
+    src: url('../fonts/GraphikArabic-Medium.woff') format('woff');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'JannaLT';
+    src: url('../fonts/GraphikArabic-Semibold.woff') format('woff');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'JannaLT';
+    src: url('../fonts/GraphikArabic-Bold.woff') format('woff');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'JannaLT';
+    src: url('../fonts/GraphikArabic-Black.woff') format('woff');
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'JannaLT';
+    src: url('../fonts/GraphikArabic-Super.woff') format('woff');
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Apply the font to all elements */
+* {
+    font-family: 'JannaLT', sans-serif;
+}
