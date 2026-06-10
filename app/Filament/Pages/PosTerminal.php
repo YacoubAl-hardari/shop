@@ -8,6 +8,7 @@ use App\Filament\Concerns\HasRoleAccess;
 use App\Filament\Schemas\PaymentDetailsSchema;
 use App\Models\MerchantCustomer;
 use App\Models\MerchantProduct;
+use App\Models\PosSale;
 use App\Services\PosSaleService;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -54,6 +55,8 @@ class PosTerminal extends Page implements HasForms
     public string $search = '';
 
     public string $barcode = '';
+
+    public ?int $showReceiptId = null;
 
     public static function getNavigationGroup(): ?string
     {
@@ -265,7 +268,7 @@ class PosTerminal extends Page implements HasForms
         $paymentType = SalePaymentType::from($data['payment_type']);
 
         try {
-            app(PosSaleService::class)->createSale(
+            $sale = app(PosSaleService::class)->createSale(
                 $team,
                 $items,
                 $paymentType,
@@ -284,6 +287,8 @@ class PosTerminal extends Page implements HasForms
                 ->send();
 
             $this->resetCart();
+            $this->showReceiptId = $sale->id;
+            $this->dispatch('open-receipt-modal');
         } catch (\Throwable $e) {
             Notification::make()
                 ->title('خطأ في البيع')
@@ -291,6 +296,63 @@ class PosTerminal extends Page implements HasForms
                 ->danger()
                 ->send();
         }
+    }
+
+    public function getReceiptSale(): ?PosSale
+    {
+        if (! $this->showReceiptId) {
+            return null;
+        }
+
+        return PosSale::with(['items', 'merchantCustomer', 'seller'])->find($this->showReceiptId);
+    }
+
+    public function closeReceipt(): void
+    {
+        $this->showReceiptId = null;
+    }
+
+    public function getPaymentMethodLabel(?string $method): string
+    {
+        return match ($method) {
+            'card' => 'بطاقة مدى / ائتمان',
+            'bank_transfer' => 'تحويل بنكي',
+            default => 'نقداً',
+        };
+    }
+
+    public function getPaymentTypeLabel(mixed $type): string
+    {
+        return match ($type?->value ?? $type) {
+            'credit' => 'آجل (ذمم)',
+            'partial' => 'دفع جزئي',
+            default => 'نقداً',
+        };
+    }
+
+    public function getZatcaQrCodeValue(PosSale $receipt): string
+    {
+        $sellerName = Filament::getTenant()->name;
+        // ZATCA VAT registration number must be 15 digits.
+        $vatNumber = '300123456700003';
+        $timestamp = $receipt->created_at->toIso8601String();
+        $totalAmount = number_format((float) $receipt->total_amount, 2, '.', '');
+        $vatAmount = number_format((float) ($receipt->total_amount * 15 / 115), 2, '.', '');
+
+        // Tag 1: Seller Name
+        $tlv1 = chr(1) . chr(strlen($sellerName)) . $sellerName;
+        // Tag 2: VAT Number
+        $tlv2 = chr(2) . chr(strlen($vatNumber)) . $vatNumber;
+        // Tag 3: Timestamp
+        $tlv3 = chr(3) . chr(strlen($timestamp)) . $timestamp;
+        // Tag 4: Total Amount
+        $tlv4 = chr(4) . chr(strlen($totalAmount)) . $totalAmount;
+        // Tag 5: VAT Amount
+        $tlv5 = chr(5) . chr(strlen($vatAmount)) . $vatAmount;
+
+        $tlv = $tlv1 . $tlv2 . $tlv3 . $tlv4 . $tlv5;
+
+        return base64_encode($tlv);
     }
 
     protected function resetCart(): void
