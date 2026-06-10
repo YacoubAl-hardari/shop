@@ -9,15 +9,12 @@
             size: auto;
         }
         body {
-            margin: 0;
-            padding: 0;
-            background: white !important;
-            color: black !important;
-        }
-        /* Hide all page content except the receipt */
-        body * {
             visibility: hidden !important;
+            background: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
         }
+        /* Make only the receipt modal content and its children visible */
         #pos-receipt-modal-content, #pos-receipt-modal-content * {
             visibility: visible !important;
         }
@@ -32,32 +29,18 @@
             color: black !important;
             box-shadow: none !important;
             border: none !important;
+            display: block !important;
         }
-        /* Hide scrollbars, dashboard headers, close/print buttons, etc. */
-        .no-print, .fi-header, .fi-sidebar, .fi-topbar, .fi-layout {
+        /* Hide screen-only elements */
+        .no-print {
             display: none !important;
             visibility: hidden !important;
         }
-        /* Style modal parent wrapping layout to be transparent and visible during print */
-        .print-modal-backdrop {
-            position: static !important;
+        /* Clear parent backgrounds and borders for a clean print */
+        .fi-layout, .fi-main, .print-modal-backdrop, .print-modal-card {
             background: transparent !important;
-            padding: 0 !important;
-            overflow: visible !important;
-            z-index: auto !important;
-            display: block !important;
-            visibility: visible !important;
-        }
-        .print-modal-card {
-            background: transparent !important;
-            border: none !important;
             box-shadow: none !important;
-            max-width: 100% !important;
-            width: auto !important;
-            overflow: visible !important;
-            max-height: none !important;
-            display: block !important;
-            visibility: visible !important;
+            border: none !important;
         }
     }
     </style>
@@ -137,7 +120,7 @@
                             <p class="text-base font-medium">لم يتم العثور على أي منتجات مطابقة</p>
                         </div>
                     @else
-                        <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 flex-1 lg:overflow-y-auto pr-1 pb-4">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 flex-1 lg:overflow-y-auto pr-1 pb-4 content-start">
                             @foreach($products as $product)
                                 @php
                                     $inStock = (float)$product->stock_quantity > 0;
@@ -146,9 +129,9 @@
                                     type="button"
                                     wire:click="addProduct({{ $product->id }})"
                                     @if(!$inStock) disabled @endif
-                                    class="flex flex-col text-right justify-between p-4 rounded-xl border transition duration-200 relative group overflow-hidden
+                                    class="w-full flex flex-col text-right justify-between p-4 rounded-xl border transition duration-200 relative group overflow-hidden
                                         @if($inStock)
-                                            bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800 hover:border-primary-500 dark:hover:border-primary-500 hover:shadow-md hover:-translate-y-0.5
+                                            bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800 hover:border-primary-500 dark:hover:border-primary-500 hover:shadow-md hover:-translate-y-0.1
                                         @else
                                             bg-gray-50 dark:bg-gray-900 border-gray-150 dark:border-gray-800 opacity-60 cursor-not-allowed
                                         @endif"
@@ -332,6 +315,114 @@
                         </div>
                     </div>
 
+                    <!-- Collapsible Currency Exchange Section (المصارفة) -->
+                    <div 
+                        x-data="{ 
+                            open: false, 
+                            currency: 'SAR', 
+                            amount: '', 
+                            rate: 140,
+                            get localAmount() {
+                                let amt = parseFloat(this.amount) || 0;
+                                let rt = parseFloat(this.rate) || 0;
+                                return Math.round(amt * rt * 100) / 100;
+                            },
+                            applyToTendered() {
+                                $wire.set('data.cash_tendered', this.localAmount);
+                                this.open = false;
+                            }
+                        }" 
+                        class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm transition mb-4 no-print"
+                    >
+                        <!-- Section Header (Click to toggle) -->
+                        <button 
+                            type="button" 
+                            @click="open = !open" 
+                            class="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-950 hover:bg-gray-100 dark:hover:bg-gray-900/50 transition select-none text-right"
+                        >
+                            <div class="flex items-center gap-2">
+                                <svg class="h-5 w-5 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span class="font-bold text-sm text-gray-800 dark:text-white">المصارفة (حاسبة العملات الأجنبية)</span>
+                            </div>
+                            <svg 
+                                class="h-4 w-4 text-gray-500 transition-transform duration-200" 
+                                :class="open ? 'transform rotate-180' : ''" 
+                                fill="none" 
+                                viewBox="0 0 24 24" 
+                                stroke="currentColor"
+                            >
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+
+                        <!-- Section Content (Collapsible) -->
+                        <div 
+                            x-show="open" 
+                            x-collapse 
+                            class="p-4 border-t border-gray-150 dark:border-gray-800 space-y-4 bg-white dark:bg-gray-900"
+                        >
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <!-- Currency Dropdown -->
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">العملة الأجنبية</label>
+                                    <select 
+                                        x-model="currency" 
+                                        @change="rate = (currency === 'SAR' ? 140 : 530)"
+                                        class="w-full text-xs rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary-500 focus:border-transparent p-2"
+                                    >
+                                        <option value="SAR">ريال سعودي (SAR)</option>
+                                        <option value="USD">دولار أمريكي (USD)</option>
+                                    </select>
+                                </div>
+
+                                <!-- Foreign Amount Input -->
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">المبلغ بالأجنبي</label>
+                                    <input 
+                                        type="number" 
+                                        x-model="amount" 
+                                        placeholder="المبلغ..."
+                                        class="w-full text-xs rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary-500 focus:border-transparent p-2 text-left font-mono"
+                                    />
+                                </div>
+
+                                <!-- Exchange Rate Input -->
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">سعر الصرف</label>
+                                    <input 
+                                        type="number" 
+                                        x-model="rate" 
+                                        placeholder="سعر الصرف..."
+                                        class="w-full text-xs rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary-500 focus:border-transparent p-2 text-left font-mono"
+                                    />
+                                </div>
+                            </div>
+
+                            <!-- Result & Apply Action -->
+                            <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-950 rounded-lg border border-gray-150 dark:border-gray-850">
+                                <div>
+                                    <span class="text-[10px] text-gray-400 dark:text-gray-500 block">المقابل بالعملة المحلية</span>
+                                    <span class="text-base font-extrabold text-primary-600 dark:text-primary-400 font-mono" x-text="localAmount.toLocaleString('en-US', {minimumFractionDigits: 2}) + ' ر.س'"></span>
+                                </div>
+                                
+                                <button 
+                                    type="button" 
+                                    @click="applyToTendered()"
+                                    :disabled="localAmount <= 0"
+                                    :class="localAmount <= 0 ? 'opacity-50 cursor-not-allowed bg-gray-300 text-gray-500' : 'bg-primary-600 hover:bg-primary-500 text-white shadow-sm'"
+                                    class="px-3 py-1.5 text-xs rounded-lg font-bold transition flex items-center gap-1.5"
+                                >
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                    <span>تطبيق كمبلغ مستلم</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Filament Form (Customer, Payment, Notes, totals placeholder) -->
                     <div class="space-y-4">
                         {{ $this->form }}
@@ -363,6 +454,9 @@
 
     <!-- Receipt Print Modal -->
     @if($showReceiptId && ($receipt = $this->getReceiptSale()))
+        @php
+            $taxNumber = $this->getMerchantTaxNumber();
+        @endphp
         <div 
             x-data="{ show: true, receiptWidth: '80mm' }" 
             x-show="show" 
@@ -421,7 +515,7 @@
                         <!-- Logo & Store Info -->
                         <div class="text-center space-y-1">
                             @if(\Filament\Facades\Filament::getTenant()->avatar_url)
-                                <img src="{{ \Filament\Facades\Filament::getTenant()->avatar_url }}" class="h-14 w-14 rounded-full mx-auto mb-2 object-cover border border-gray-200" alt="logo" />
+                                <img src="{{ asset("storage/" . \Filament\Facades\Filament::getTenant()->avatar_url) }}" class="h-14 w-14 rounded-full mx-auto mb-2 object-cover border border-gray-200" alt="logo" />
                             @else
                                 <div class="h-14 w-14 rounded-full bg-gray-100 text-gray-800 font-black text-xl flex items-center justify-center mx-auto mb-2 border border-gray-300">
                                     {{ mb_substr(\Filament\Facades\Filament::getTenant()->name, 0, 1, 'utf-8') }}
@@ -430,17 +524,19 @@
                             
                             <h2 class="text-base font-black tracking-wide">{{ \Filament\Facades\Filament::getTenant()->name }}</h2>
                             <div class="bg-gray-100 text-gray-800 text-[10px] font-bold py-0.5 px-2 rounded-full inline-block">
-                                فاتورة تبسيطية ضريبية
+                                {{ $taxNumber ? 'فاتورة تبسيطية ضريبية' : 'فاتورة مبيعات' }}
                             </div>
-                            <p class="text-[9px] text-gray-500 font-medium">Simplified Tax Invoice</p>
+                            <p class="text-[9px] text-gray-500 font-medium">{{ $taxNumber ? 'Simplified Tax Invoice' : 'Sales Invoice' }}</p>
                         </div>
 
                         <!-- Store details (Tax Number, CR) -->
                         <div class="text-[10px] text-gray-800 space-y-0.5 border-t border-b border-dashed border-gray-300 py-2 my-2 text-right">
-                            <div class="flex justify-between">
-                                <span class="text-gray-500">الرقم الضريبي (VAT):</span>
-                                <span class="font-mono font-bold">300123456700003</span>
-                            </div>
+                            @if($taxNumber)
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">الرقم الضريبي (VAT):</span>
+                                    <span class="font-mono font-bold">{{ $taxNumber }}</span>
+                                </div>
+                            @endif
                             <div class="flex justify-between">
                                 <span class="text-gray-500">السجل التجاري (CR):</span>
                                 <span class="font-mono">1010000000</span>
@@ -528,17 +624,19 @@
                         @endphp
                         <div class="space-y-1 pt-2 border-t border-dashed border-black text-[10px]">
                             <div class="flex justify-between">
-                                <span>إجمالي الأصناف (شامل الضريبة):</span>
+                                <span>إجمالي الأصناف{{ $taxNumber ? ' (شامل الضريبة)' : '' }}:</span>
                                 <span class="font-mono font-bold">{{ number_format($total, 2) }} ر.س</span>
                             </div>
-                            <div class="flex justify-between text-gray-600">
-                                <span>المبلغ الخاضع للضريبة (Taxable):</span>
-                                <span class="font-mono">{{ number_format($taxableAmount, 2) }} ...</span>
-                            </div>
-                            <div class="flex justify-between text-gray-600">
-                                <span>ضريبة القيمة المضافة (VAT 15%):</span>
-                                <span class="font-mono">{{ number_format($vatAmount, 2) }} ر.س</span>
-                            </div>
+                            @if($taxNumber)
+                                <div class="flex justify-between text-gray-600">
+                                    <span>المبلغ الخاضع للضريبة (Taxable):</span>
+                                    <span class="font-mono">{{ number_format($taxableAmount, 2) }} ر.س</span>
+                                </div>
+                                <div class="flex justify-between text-gray-600">
+                                    <span>ضريبة القيمة المضافة (VAT 15%):</span>
+                                    <span class="font-mono">{{ number_format($vatAmount, 2) }} ر.س</span>
+                                </div>
+                            @endif
                             @if($creditApplied > 0)
                                 <div class="flex justify-between text-emerald-700 font-bold">
                                     <span>الخصم / الرصيد المستخدم:</span>
@@ -563,7 +661,7 @@
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-500">المبلغ المستلم (Received):</span>
-                                <span class="font-mono font-bold">{{ number_format($receipt->paid_amount, 2) }} ر.س</span>
+                                <span class="font-mono font-bold">{{ number_format($receiptCashTendered ?? $receipt->paid_amount, 2) }} ر.س</span>
                             </div>
                             @if($receipt->credit_amount > 0)
                                 <div class="flex justify-between text-rose-700 font-bold">
@@ -573,7 +671,7 @@
                             @else
                                 <div class="flex justify-between">
                                     <span class="text-gray-500">المرتجع / الفكة (Change):</span>
-                                    <span class="font-mono font-bold">{{ number_format(max(0, $receipt->paid_amount - $netDue), 2) }} ...</span>
+                                    <span class="font-mono font-bold">{{ number_format(max(0, ($receiptCashTendered ?? $receipt->paid_amount) - $netDue), 2) }} ر.س</span>
                                 </div>
                             @endif
                             @if($receipt->payment_reference)
@@ -586,22 +684,29 @@
 
                         <!-- ZATCA QR Code & Greetings -->
                         <div 
+                            @if($taxNumber)
                             x-init="
                                 $nextTick(() => {
                                     new QRious({
                                         element: $refs.qrCanvas,
-                                        value: '{{ $this->getZatcaQrCodeValue($receipt) }}',
+                                        value: '{{ $this->getReceiptQrCodeValue($receipt) }}',
                                         size: 150,
                                         level: 'M'
                                     });
                                 });
                             "
+                            @endif
                             class="flex flex-col items-center justify-center space-y-2 pt-2 text-center"
                         >
-                            <canvas x-ref="qrCanvas" class="mx-auto bg-white p-1 border border-gray-200 rounded-lg" style="width: 100px; height: 100px;"></canvas>
+                            @if($taxNumber)
+                                <canvas x-ref="qrCanvas" class="mx-auto bg-white p-1 border border-gray-200 rounded-lg" style="width: 100px; height: 100px;"></canvas>
+                            @endif
                             
                             <div class="text-[9px] text-gray-550 space-y-0.5 font-bold">
-                                <p class="text-black">شكراً لتعاملكم معنا</p>
+                                @if($taxNumber)
+                                    <p class="text-black">فاتورة ضريبية مبسطة رقمية</p>
+                                @endif
+                                <p>شكراً لتعاملكم معنا</p>
                                 <p>يسعدنا خدمتكم دائماً</p>
                                 <p class="text-[8px] font-normal text-gray-400 mt-1">البضاعة المباعة تسترجع وتستبدل خلال 7 أيام</p>
                             </div>

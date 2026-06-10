@@ -58,6 +58,8 @@ class PosTerminal extends Page implements HasForms
 
     public ?int $showReceiptId = null;
 
+    public ?float $receiptCashTendered = null;
+
     public static function getNavigationGroup(): ?string
     {
         return 'المبيعات';
@@ -179,6 +181,26 @@ class PosTerminal extends Page implements HasForms
                             ])
                             ->visible(fn (Get $get): bool => $get('payment_type') === SalePaymentType::PARTIAL->value),
 
+                        TextInput::make('cash_tendered')
+                            ->label('المبلغ المستلم من العميل')
+                            ->numeric()
+                            ->prefix('ر.س')
+                            ->live()
+                            ->placeholder('أدخل المبلغ المستلم لحساب الفكة...')
+                            ->helperText(function (Get $get): ?string {
+                                $tendered = (float) ($get('cash_tendered') ?? 0);
+                                $netDue = $this->netSaleTotal([
+                                    'items' => $get('items') ?? [],
+                                    'merchant_customer_id' => $get('merchant_customer_id'),
+                                    'apply_customer_credit' => $get('apply_customer_credit'),
+                                ]);
+                                if ($tendered > $netDue) {
+                                    return 'الفكة (المتبقي للعميل): ' . number_format($tendered - $netDue, 2) . ' ر.س';
+                                }
+                                return null;
+                            })
+                            ->visible(fn (Get $get): bool => $get('payment_type') === SalePaymentType::CASH->value),
+
                         Section::make('تفاصيل الدفع')
                             ->visible(fn (Get $get): bool => $get('payment_type') !== SalePaymentType::CREDIT->value
                                 && $this->netSaleTotal([
@@ -281,6 +303,8 @@ class PosTerminal extends Page implements HasForms
                 $this->calculateCreditApplied($data),
             );
 
+            $this->receiptCashTendered = ! empty($data['cash_tendered']) ? (float) $data['cash_tendered'] : null;
+
             Notification::make()
                 ->title('تم إتمام البيع بنجاح')
                 ->success()
@@ -310,6 +334,7 @@ class PosTerminal extends Page implements HasForms
     public function closeReceipt(): void
     {
         $this->showReceiptId = null;
+        $this->receiptCashTendered = null;
     }
 
     public function getPaymentMethodLabel(?string $method): string
@@ -330,11 +355,48 @@ class PosTerminal extends Page implements HasForms
         };
     }
 
-    public function getZatcaQrCodeValue(PosSale $receipt): string
+    public function getMerchantTaxNumber(): ?string
+    {
+        if (auth()->check() && !empty(auth()->user()->tax_number)) {
+            return auth()->user()->tax_number;
+        }
+
+        $tenant = Filament::getTenant();
+        if ($tenant) {
+            $owner = $tenant->members()->wherePivot('role', 'owner')->first();
+            if ($owner && !empty($owner->tax_number)) {
+                return $owner->tax_number;
+            }
+
+            $member = $tenant->members()->whereNotNull('tax_number')->where('tax_number', '<>', '')->first();
+            if ($member) {
+                return $member->tax_number;
+            }
+        }
+
+        return null;
+    }
+
+    public function getReceiptQrCodeValue(PosSale $receipt): string
+    {
+        $taxNumber = $this->getMerchantTaxNumber();
+        if ($taxNumber) {
+            return $this->getZatcaQrCodeValue($receipt, $taxNumber);
+        }
+
+        $sellerName = Filament::getTenant()->name;
+        $date = $receipt->created_at->format('Y-m-d H:i');
+        $total = number_format((float) $receipt->total_amount, 2, '.', '');
+        
+        return "المتجر: {$sellerName}\nرقم الفاتورة: {$receipt->sale_number}\nالتاريخ: {$date}\nالإجمالي: {$total} ر.س";
+    }
+
+    public function getZatcaQrCodeValue(PosSale $receipt, ?string $vatNumber = null): string
     {
         $sellerName = Filament::getTenant()->name;
-        // ZATCA VAT registration number must be 15 digits.
-        $vatNumber = '300123456700003';
+        if (!$vatNumber) {
+            $vatNumber = $this->getMerchantTaxNumber() ?? '300123456700003';
+        }
         $timestamp = $receipt->created_at->toIso8601String();
         $totalAmount = number_format((float) $receipt->total_amount, 2, '.', '');
         $vatAmount = number_format((float) ($receipt->total_amount * 15 / 115), 2, '.', '');
@@ -363,6 +425,7 @@ class PosTerminal extends Page implements HasForms
             'apply_customer_credit' => false,
             'quick_barcode' => null,
             'items' => [],
+            'cash_tendered' => null,
         ]);
     }
 
