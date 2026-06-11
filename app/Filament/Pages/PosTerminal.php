@@ -28,7 +28,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Support\Icons\Heroicon;
-use JeffersonGoncalves\Filament\QrCodeField\Forms\Components\QrCodeInput;
 
 class PosTerminal extends Page implements HasForms
 {
@@ -424,6 +423,7 @@ class PosTerminal extends Page implements HasForms
             'payment_method' => 'cash',
             'apply_customer_credit' => false,
             'quick_barcode' => null,
+            'barcode_search' => null,
             'items' => [],
             'cash_tendered' => null,
         ]);

@@ -1,46 +1,60 @@
 <x-filament-panels::page>
-    <!-- Load QRious QR Code generator library from CDN -->
+    <!-- QRious for receipt QR codes -->
     <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+    <!-- ZXing: professional fast barcode scanner engine -->
+    <script src="https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js"></script>
 
     <style>
+    /* ===== Professional Barcode Scanner Styles ===== */
+    @keyframes scanBeam {
+        0%   { top: 8px; }
+        50%  { top: calc(100% - 8px); }
+        100% { top: 8px; }
+    }
+    @keyframes successFlash {
+        0%   { opacity: 0; }
+        30%  { opacity: 1; }
+        100% { opacity: 0; }
+    }
+    @keyframes cornerPulse {
+        0%, 100% { opacity: 1; }
+        50%       { opacity: 0.5; }
+    }
+    .scanner-beam {
+        position: absolute;
+        left: 0; right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #22d3ee, #06b6d4, #22d3ee, transparent);
+        box-shadow: 0 0 8px 2px rgba(6,182,212,0.7), 0 0 20px 4px rgba(6,182,212,0.3);
+        animation: scanBeam 1.8s ease-in-out infinite;
+        z-index: 10;
+    }
+    .scanner-success-flash {
+        position: absolute;
+        inset: 0;
+        background: rgba(16,185,129,0.35);
+        pointer-events: none;
+        z-index: 20;
+        opacity: 0;
+    }
+    .scanner-success-flash.active {
+        animation: successFlash 0.5s ease-out forwards;
+    }
+    .scanner-corner { animation: cornerPulse 2s ease-in-out infinite; }
+    #zxing-video { width: 100%; height: 100%; object-fit: cover; display: block; }
     @media print {
-        @page {
-            margin: 0;
-            size: auto;
-        }
-        body {
-            visibility: hidden !important;
-            background: white !important;
-            margin: 0 !important;
-            padding: 0 !important;
-        }
-        /* Make only the receipt modal content and its children visible */
-        #pos-receipt-modal-content, #pos-receipt-modal-content * {
-            visibility: visible !important;
-        }
+        @page { margin: 0; size: auto; }
+        body { visibility: hidden !important; background: white !important; margin: 0 !important; padding: 0 !important; }
+        #pos-receipt-modal-content, #pos-receipt-modal-content * { visibility: visible !important; }
         #pos-receipt-modal-content {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: var(--receipt-width, 80mm) !important;
-            padding: 4mm !important;
-            margin: 0 !important;
-            background: white !important;
-            color: black !important;
-            box-shadow: none !important;
-            border: none !important;
-            display: block !important;
+            position: absolute !important; left: 0 !important; top: 0 !important;
+            width: var(--receipt-width, 80mm) !important; padding: 4mm !important;
+            margin: 0 !important; background: white !important; color: black !important;
+            box-shadow: none !important; border: none !important; display: block !important;
         }
-        /* Hide screen-only elements */
-        .no-print {
-            display: none !important;
-            visibility: hidden !important;
-        }
-        /* Clear parent backgrounds and borders for a clean print */
+        .no-print { display: none !important; visibility: hidden !important; }
         .fi-layout, .fi-main, .print-modal-backdrop, .print-modal-card {
-            background: transparent !important;
-            box-shadow: none !important;
-            border: none !important;
+            background: transparent !important; box-shadow: none !important; border: none !important;
         }
     }
     </style>
@@ -81,22 +95,298 @@
                 :class="activeTab === 'products' ? 'block' : 'hidden lg:block'"
                 class="lg:col-span-7 space-y-6 lg:h-[calc(100vh-8.5rem)] lg:flex lg:flex-col"
             >
-                <!-- Top Search Panel (Fixed at top of catalog) -->
-                <div class="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 shrink-0">
+                <!-- Top Barcode Scanner + Search Panel -->
+                <div
+                    x-data="{
+                        cameraOpen: false,
+                        scanning: false,
+                        error: null,
+                        lastResult: '',
+                        resultText: '',
+                        codeReader: null,
+                        torchOn: false,
+                        flashEl: null,
+                        barcodeVal: '',
+                        debounceTimer: null,
+
+                        // Called on Enter key or automatically after typing stops
+                        submitBarcode() {
+                            clearTimeout(this.debounceTimer);
+                            this.debounceTimer = null;
+                            const val = this.barcodeVal.trim();
+                            if (!val) return;
+                            this.barcodeVal = '';
+                            $wire.set('barcode', val).then(() => $wire.call('scanBarcode'));
+                        },
+
+                        // Called on every keystroke - auto-submits after 200ms silence
+                        onBarcodeInput() {
+                            clearTimeout(this.debounceTimer);
+                            if (this.barcodeVal.trim().length >= 3) {
+                                this.debounceTimer = setTimeout(() => this.submitBarcode(), 200);
+                            }
+                        },
+
+                        async openCamera() {
+                            this.error = null;
+                            this.lastResult = '';
+                            this.resultText = '';
+                            this.cameraOpen = true;
+                            await this.$nextTick();
+                            try {
+                                const hints = new Map();
+                                const formats = [
+                                    ZXing.BarcodeFormat.EAN_13,
+                                    ZXing.BarcodeFormat.EAN_8,
+                                    ZXing.BarcodeFormat.CODE_128,
+                                    ZXing.BarcodeFormat.CODE_39,
+                                    ZXing.BarcodeFormat.UPC_A,
+                                    ZXing.BarcodeFormat.UPC_E,
+                                    ZXing.BarcodeFormat.ITF,
+                                    ZXing.BarcodeFormat.QR_CODE,
+                                    ZXing.BarcodeFormat.DATA_MATRIX,
+                                    ZXing.BarcodeFormat.PDF_417,
+                                ];
+                                hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
+                                hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+
+                                this.codeReader = new ZXing.BrowserMultiFormatReader(hints, {
+                                    delayBetweenScanAttempts: 80,
+                                    delayBetweenScanSuccess: 1000,
+                                });
+
+                                const videoEl = document.getElementById('zxing-video');
+                                this.flashEl = document.getElementById('scanner-flash');
+                                this.scanning = true;
+
+                                await this.codeReader.decodeFromConstraints(
+                                    {
+                                        video: {
+                                            facingMode: 'environment',
+                                            width:  { ideal: 1920 },
+                                            height: { ideal: 1080 },
+                                            focusMode: 'continuous',
+                                        }
+                                    },
+                                    videoEl,
+                                    (result, err) => {
+                                        if (result) {
+                                            const txt = result.getText();
+                                            if (txt && txt !== this.lastResult) {
+                                                this.lastResult = txt;
+                                                this.resultText = txt;
+                                                if (this.flashEl) {
+                                                    this.flashEl.classList.remove('active');
+                                                    void this.flashEl.offsetWidth;
+                                                    this.flashEl.classList.add('active');
+                                                }
+                                                try {
+                                                    const ctx = new AudioContext();
+                                                    const osc = ctx.createOscillator();
+                                                    osc.type = 'square';
+                                                    osc.frequency.setValueAtTime(1800, ctx.currentTime);
+                                                    osc.frequency.setValueAtTime(900, ctx.currentTime + 0.06);
+                                                    osc.connect(ctx.destination);
+                                                    osc.start(); osc.stop(ctx.currentTime + 0.12);
+                                                    setTimeout(() => ctx.close(), 200);
+                                                } catch(e) {}
+                                                setTimeout(() => {
+                                                    this.closeCamera();
+                                                    $wire.set('barcode', txt).then(() => $wire.call('scanBarcode'));
+                                                    this.lastResult = '';
+                                                }, 300);
+                                            }
+                                        }
+                                    }
+                                );
+                            } catch(e) {
+                                this.error = 'تعذّر تشغيل الكاميرا: ' + (e.message || e);
+                                this.scanning = false;
+                            }
+                        },
+
+                        closeCamera() {
+                            if (this.codeReader) {
+                                try { this.codeReader.reset(); } catch(e) {}
+                                this.codeReader = null;
+                            }
+                            this.scanning = false;
+                            this.cameraOpen = false;
+                            this.error = null;
+                            this.torchOn = false;
+                        },
+
+                        async toggleTorch() {
+                            const videoEl = document.getElementById('zxing-video');
+                            const stream = videoEl && videoEl.srcObject;
+                            if (!stream) return;
+                            const track = stream.getVideoTracks()[0];
+                            if (!track) return;
+                            try {
+                                this.torchOn = !this.torchOn;
+                                await track.applyConstraints({ advanced: [{ torch: this.torchOn }] });
+                            } catch(e) { this.torchOn = false; }
+                        }
+                    }"
+                    class="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 shrink-0 space-y-3"
+                >
+                    <!-- Barcode scanner row -->
+                    <div class="flex items-center gap-2">
+                        <!-- Barcode icon -->
+                        <div class="text-primary-500 shrink-0">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4H4v16h8M16 4h4v4m0 4h-4m4 4v4h-4" />
+                            </svg>
+                        </div>
+                        <!-- Barcode text input -->
+                        <div class="relative flex-1">
+                            <input
+                                id="barcode_main_input"
+                                type="text"
+                                x-model="barcodeVal"
+                                @input="onBarcodeInput()"
+                                @keydown.enter.prevent="submitBarcode()"
+                                @focus-barcode.window="barcodeVal = ''; clearTimeout(debounceTimer); $el.focus()"
+                                placeholder="امسح الباركود هنا..."
+                                autocomplete="off"
+                                spellcheck="false"
+                                class="w-full pr-4 pl-10 py-2.5 rounded-xl border-2 border-primary-300 dark:border-primary-700 bg-primary-50 dark:bg-primary-950/20 text-gray-900 dark:text-white placeholder-primary-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition font-mono text-sm"
+                            />
+                            <button
+                                type="button"
+                                x-show="barcodeVal.length > 0"
+                                @click="barcodeVal = ''; $el.previousElementSibling.focus()"
+                                class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 hover:text-gray-600"
+                            >
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                        <!-- Camera open button -->
+                        <button
+                            type="button"
+                            @click="openCamera()"
+                            title="مسح بالكاميرا"
+                            class="shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-primary-600 hover:bg-primary-500 text-white shadow transition active:scale-95"
+                        >
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="text-[11px] text-gray-400 dark:text-gray-500 pr-7">
+                        امسح الباركود بالماسح أو اضغط أيقونة الكاميرا للمسح الضوئي
+                    </p>
+
+                    <!-- Product search row -->
                     <div class="relative">
                         <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
-                            <!-- Search SVG icon -->
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                         </div>
-                        <input 
-                            type="text" 
-                            wire:model.live.debounce.300ms="search" 
-                            placeholder="ابحث باسم المنتج أو الباركود..." 
+                        <input
+                            type="text"
+                            wire:model.live.debounce.300ms="search"
+                            placeholder="ابحث باسم المنتج أو الباركود..."
                             class="w-full pr-10 pl-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
                         />
                     </div>
+
+                    <!-- ===== Professional Camera Scanner Modal ===== -->
+                    <template x-teleport="body">
+                        <div
+                            x-show="cameraOpen"
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0"
+                            x-transition:enter-end="opacity-100"
+                            x-transition:leave="transition ease-in duration-150"
+                            x-transition:leave-start="opacity-100"
+                            x-transition:leave-end="opacity-0"
+                            class="fixed inset-0 z-[300] bg-black flex flex-col"
+                            @keydown.escape.window="closeCamera()"
+                        >
+                            <!-- Full screen viewfinder -->
+                            <div class="relative flex-1 overflow-hidden bg-black">
+                                <!-- Camera video stream -->
+                                <video id="zxing-video" autoplay muted playsinline class="absolute inset-0 w-full h-full object-cover"></video>
+
+                                <!-- Dark vignette overlay (top & bottom) -->
+                                <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 25%, transparent 75%, rgba(0,0,0,0.55) 100%);"></div>
+
+                                <!-- Scanner frame (cutout effect) -->
+                                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <!-- Dimmed sides -->
+                                    <div class="absolute inset-0" style="background: rgba(0,0,0,0.45);"></div>
+                                    <!-- Transparent scan window -->
+                                    <div class="relative z-10" style="width: min(85vw, 380px); height: min(40vw, 180px);">
+                                        <!-- Clear window -->
+                                        <div class="absolute inset-0 rounded-lg" style="box-shadow: 0 0 0 9999px rgba(0,0,0,0.45); border: 1.5px solid rgba(255,255,255,0.15);"></div>
+                                        <!-- Animated laser beam -->
+                                        <div class="scanner-beam"></div>
+                                        <!-- Corner brackets -->
+                                        <div class="scanner-corner absolute top-0 right-0 w-7 h-7 border-t-[3px] border-r-[3px] border-cyan-400 rounded-tr-md"></div>
+                                        <div class="scanner-corner absolute top-0 left-0 w-7 h-7 border-t-[3px] border-l-[3px] border-cyan-400 rounded-tl-md"></div>
+                                        <div class="scanner-corner absolute bottom-0 right-0 w-7 h-7 border-b-[3px] border-r-[3px] border-cyan-400 rounded-br-md"></div>
+                                        <div class="scanner-corner absolute bottom-0 left-0 w-7 h-7 border-b-[3px] border-l-[3px] border-cyan-400 rounded-bl-md"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Success flash overlay -->
+                                <div id="scanner-flash" class="scanner-success-flash"></div>
+
+                                <!-- Error panel -->
+                                <div x-show="error" x-cloak class="absolute inset-0 flex items-center justify-center bg-black/80 z-30 p-6">
+                                    <div class="bg-white rounded-2xl p-6 text-center space-y-3 max-w-xs w-full shadow-2xl">
+                                        <svg class="h-12 w-12 text-rose-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <p class="text-sm font-bold text-gray-800" x-text="error"></p>
+                                        <button type="button" @click="closeCamera()" class="w-full py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold transition">إغلاق</button>
+                                    </div>
+                                </div>
+
+                                <!-- Top bar: title + close -->
+                                <div class="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-3">
+                                    <div class="flex items-center gap-2 text-white">
+                                        <div class="w-7 h-7 rounded-lg bg-white/10 backdrop-blur flex items-center justify-center">
+                                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4H4v16h8M16 4h4v4m0 4h-4m4 4v4h-4"/></svg>
+                                        </div>
+                                        <span class="font-bold text-sm drop-shadow">مسح الباركود</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        @click="closeCamera()"
+                                        class="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition active:scale-95"
+                                    >
+                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+
+                                <!-- Bottom bar: hint + torch -->
+                                <div class="absolute bottom-0 left-0 right-0 z-20 flex flex-col items-center gap-3 pb-8 pt-4">
+                                    <!-- Detected value badge -->
+                                    <div
+                                        x-show="resultText"
+                                        x-transition
+                                        class="bg-emerald-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg"
+                                        x-text="resultText"
+                                    ></div>
+                                    <p class="text-white/70 text-xs font-medium drop-shadow">وجِّه الكاميرا داخل الإطار للكشف التلقائي</p>
+                                    <!-- Torch toggle button -->
+                                    <button
+                                        type="button"
+                                        @click="toggleTorch()"
+                                        :class="torchOn ? 'bg-yellow-400 text-gray-900' : 'bg-white/10 text-white'"
+                                        class="w-14 h-14 rounded-full backdrop-blur flex items-center justify-center transition active:scale-95 shadow-lg"
+                                        title="تشغيل/إيقاف الفلاش"
+                                    >
+                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
                 </div>
 
                 <!-- Product Catalog Grid (Scrollable on desktop) -->

@@ -17,6 +17,27 @@ class CreateJournalEntry extends CreateRecord
     {
         unset($data['balance_check']);
 
+        // ── التحقق من توازن القيد ──────────────────────────────────
+        $lines  = collect($data['lines'] ?? []);
+        $debit  = $lines->sum(fn ($l) => (float) ($l['debit_amount']  ?? 0));
+        $credit = $lines->sum(fn ($l) => (float) ($l['credit_amount'] ?? 0));
+        $diff   = round(abs($debit - $credit), 2);
+
+        if ($diff !== 0.0) {
+            Notification::make()
+                ->title('⚖️ القيد غير متوازن — لا يمكن الحفظ')
+                ->body(
+                    'مجموع المدين: ' . number_format($debit,  2) . ' ر.س' . "\n" .
+                    'مجموع الدائن: ' . number_format($credit, 2) . ' ر.س' . "\n" .
+                    'الفرق: '        . number_format($diff,   2) . ' ر.س — يجب أن يكون صفراً'
+                )
+                ->danger()
+                ->persistent()
+                ->send();
+
+            $this->halt();
+        }
+
         return $data;
     }
 
