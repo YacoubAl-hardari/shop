@@ -42,7 +42,7 @@ class MerchantProduct extends Model
             }
 
             if ((float) $product->stock_quantity > 0) {
-                \App\Models\StockMovement::create([
+                $movement = \App\Models\StockMovement::create([
                     'team_id'            => $product->team_id,
                     'merchant_product_id' => $product->id,
                     'movement_type'      => \App\Enums\StockMovementType::OPENING_BALANCE,
@@ -55,6 +55,26 @@ class MerchantProduct extends Model
                     'notes'              => 'رصيد افتتاحي عند إنشاء المنتج',
                     'created_by'         => \Illuminate\Support\Facades\Auth::id(),
                 ]);
+
+                // ترحيل قيد محاسبي للرصيد الافتتاحي
+                try {
+                    $totalCost = (float) $product->stock_quantity * (float) $product->cost;
+                    if ($totalCost > 0 && $product->team) {
+                        $entry = app(\App\Services\AccountingService::class)->post(
+                            $product->team,
+                            [
+                                ['account_code' => '1201', 'debit_amount' => $totalCost, 'description' => 'رصيد افتتاحي للمنتج — '.$product->name],
+                                ['account_code' => '3001', 'credit_amount' => $totalCost, 'description' => 'رصيد افتتاحي للمنتج — '.$product->name],
+                            ],
+                            'إثبات رصيد افتتاحي مخزون — '.$product->name,
+                            MerchantProduct::class,
+                            $product->id
+                        );
+                        $movement->update(['journal_entry_id' => $entry->id]);
+                    }
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("Could not post opening balance journal entry for product {$product->id}: " . $e->getMessage());
+                }
             }
         });
 
@@ -73,7 +93,7 @@ class MerchantProduct extends Model
                         ? \App\Enums\StockMovementType::ADJUSTMENT_ADD 
                         : \App\Enums\StockMovementType::ADJUSTMENT_REMOVE;
 
-                    \App\Models\StockMovement::create([
+                    $movement = \App\Models\StockMovement::create([
                         'team_id'            => $product->team_id,
                         'merchant_product_id' => $product->id,
                         'movement_type'      => $type,
@@ -86,6 +106,42 @@ class MerchantProduct extends Model
                         'notes'              => 'تسوية مخزون يدوية من صفحة تعديل المنتج',
                         'created_by'         => \Illuminate\Support\Facades\Auth::id(),
                     ]);
+
+                    // ترحيل القيد المحاسبي للتسوية
+                    try {
+                        $totalCost = abs($diff) * (float) $product->cost;
+                        if ($totalCost > 0 && $product->team) {
+                            $accountingService = app(\App\Services\AccountingService::class);
+                            if ($diff > 0) {
+                                // إضافة تسوية: مدين 1201 مخزون / دائن 4005 إيرادات متنوعة
+                                $entry = $accountingService->post(
+                                    $product->team,
+                                    [
+                                        ['account_code' => '1201', 'debit_amount' => $totalCost, 'description' => 'زيادة مخزون تسوية يدوية — '.$product->name],
+                                        ['account_code' => '4005', 'credit_amount' => $totalCost, 'description' => 'إيراد تسوية مخزون — '.$product->name],
+                                    ],
+                                    'تسوية مخزون يدوية (إضافة) — '.$product->name,
+                                    \App\Models\StockMovement::class,
+                                    $movement->id
+                                );
+                            } else {
+                                // خصم تسوية: مدين 5001 تكلفة / دائن 1201 مخزون
+                                $entry = $accountingService->post(
+                                    $product->team,
+                                    [
+                                        ['account_code' => '5001', 'debit_amount' => $totalCost, 'description' => 'عجز مخزون تسوية يدوية — '.$product->name],
+                                        ['account_code' => '1201', 'credit_amount' => $totalCost, 'description' => 'خصم مخزون تسوية يدوية — '.$product->name],
+                                    ],
+                                    'تسوية مخزون يدوية (خصم) — '.$product->name,
+                                    \App\Models\StockMovement::class,
+                                    $movement->id
+                                );
+                            }
+                            $movement->update(['journal_entry_id' => $entry->id]);
+                        }
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::warning("Could not post manual stock adjustment journal entry for movement {$movement->id}: " . $e->getMessage());
+                    }
                 }
             }
         });

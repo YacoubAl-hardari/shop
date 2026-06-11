@@ -67,6 +67,18 @@ it('records opening balance movement when product is created with stock', functi
     expect($movement)->not->toBeNull();
     expect((float) $movement->quantity)->toBe(25.0);
     expect($movement->direction)->toBe('in');
+
+    // Check opening balance journal entry
+    $entry = \App\Models\JournalEntry::where('reference_type', MerchantProduct::class)
+        ->where('reference_id', $product->id)
+        ->first();
+    expect($entry)->not->toBeNull();
+    expect($entry->description)->toContain('رصيد افتتاحي مخزون');
+
+    $lines = $entry->lines()->with('account')->get();
+    expect($lines->count())->toBe(2);
+    expect($lines->first(fn($l) => $l->account->code === '1201')->debit_amount)->toBe('1250.00'); // 25 qty * 50 cost
+    expect($lines->first(fn($l) => $l->account->code === '3001')->credit_amount)->toBe('1250.00');
 });
 
 it('records adjustment movement when product stock quantity is updated', function () {
@@ -81,6 +93,17 @@ it('records adjustment movement when product stock quantity is updated', functio
     expect((float) $movementAdd->quantity)->toBe(5.0);
     expect($movementAdd->direction)->toBe('in');
 
+    // Check adjustment add journal entry
+    $entryAdd = \App\Models\JournalEntry::where('reference_type', \App\Models\StockMovement::class)
+        ->where('reference_id', $movementAdd->id)
+        ->first();
+    expect($entryAdd)->not->toBeNull();
+
+    $linesAdd = $entryAdd->lines()->with('account')->get();
+    expect($linesAdd->count())->toBe(2);
+    expect($linesAdd->first(fn($l) => $l->account->code === '1201')->debit_amount)->toBe('500.00'); // 5 units * 100 cost
+    expect($linesAdd->first(fn($l) => $l->account->code === '4005')->credit_amount)->toBe('500.00');
+
     // 2. Stock quantity decreased (Adjustment Remove)
     $this->product->update(['stock_quantity' => 12.0]); // was 15.0
     
@@ -92,4 +115,15 @@ it('records adjustment movement when product stock quantity is updated', functio
     expect($movementRemove)->not->toBeNull();
     expect((float) $movementRemove->quantity)->toBe(3.0);
     expect($movementRemove->direction)->toBe('out');
+
+    // Check adjustment remove journal entry
+    $entryRemove = \App\Models\JournalEntry::where('reference_type', \App\Models\StockMovement::class)
+        ->where('reference_id', $movementRemove->id)
+        ->first();
+    expect($entryRemove)->not->toBeNull();
+
+    $linesRemove = $entryRemove->lines()->with('account')->get();
+    expect($linesRemove->count())->toBe(2);
+    expect($linesRemove->first(fn($l) => $l->account->code === '5001')->debit_amount)->toBe('300.00'); // 3 units * 100 cost
+    expect($linesRemove->first(fn($l) => $l->account->code === '1201')->credit_amount)->toBe('300.00');
 });
