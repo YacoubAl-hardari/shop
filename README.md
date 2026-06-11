@@ -1,4 +1,4 @@
-# 🛒 1.0.4 نظام إدارة حسابات التجار والعملاء
+# 🛒 1.0.5 نظام إدارة حسابات التجار والعملاء
 
 <img width="400" height="400" alt="screencapture-shop-test" src="screencapture-shop-test-2026-06-04-22_59_43.png" />
 
@@ -409,11 +409,11 @@ flowchart TD
 
 | التقنية | الإصدار | الاستخدام |
 |---|---|---|
-| **Laravel** | 12.x | الإطار الأساسي للـ Backend |
-| **Filament** | 4.x | لوحات التحكم والـ CRUD |
-| **Livewire** | 3.x | التفاعلية اللحظية في الـ POS |
+| **Laravel** | 13.x | الإطار الأساسي للـ Backend |
+| **Filament** | 5.x | لوحات التحكم والـ CRUD |
+| **Livewire** | 4.x | التفاعلية اللحظية في الـ POS |
 | **Alpine.js** | 3.x | التفاعل على مستوى الـ UI |
-| **React + Vite** | 19 / 8 | صفحة الهبوط والـ Landing Page |
+| **React + Vite** | 19 / 10 | صفحة الهبوط والـ Landing Page |
 | **Tailwind CSS** | 4.x | تصميم واجهات المستخدم |
 | **SQLite / MySQL** | — | قاعدة البيانات |
 | **QRious.js** | — | توليد QR Code للفواتير |
