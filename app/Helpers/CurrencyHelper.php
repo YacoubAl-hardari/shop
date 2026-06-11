@@ -112,6 +112,17 @@ class CurrencyHelper
     }
 
     /**
+     * Get currency name depending on the code.
+     */
+    public static function getName(string $code = null): string
+    {
+        $resolvedCode = $code ?: self::getCode();
+        $currencies = self::getCurrencies();
+
+        return $currencies[$resolvedCode]['name'] ?? 'ريال سعودي';
+    }
+
+    /**
      * Format a numerical value with the dynamic currency.
      */
     public static function format(float $amount, string $code = null): string
