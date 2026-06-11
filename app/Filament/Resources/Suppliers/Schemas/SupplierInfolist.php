@@ -18,7 +18,7 @@ class SupplierInfolist
                     TextEntry::make('phone')->label('الهاتف'),
                     TextEntry::make('email')->label('البريد'),
                     TextEntry::make('tax_number')->label('الرقم الضريبي'),
-                    TextEntry::make('balance')->label('الرصيد')->money('SAR'),
+                    TextEntry::make('balance')->label('الرصيد'),
                     IconEntry::make('is_active')->label('نشط')->boolean(),
                 ]),
         ]);

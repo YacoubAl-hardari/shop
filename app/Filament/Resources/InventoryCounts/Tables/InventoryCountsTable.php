@@ -35,15 +35,15 @@ class InventoryCountsTable
 
                 TextColumn::make('total_book_value')
                     ->label('القيمة الدفترية')
-                    ->money('SAR'),
+                ,
 
                 TextColumn::make('total_counted_value')
                     ->label('القيمة الفعلية')
-                    ->money('SAR'),
+                ,
 
                 TextColumn::make('variance_value')
                     ->label('الفارق')
-                    ->money('SAR')
+
                     ->color(fn($record) => (float) $record->variance_value > 0 ? 'success'
                         : ((float) $record->variance_value < 0 ? 'danger' : 'gray')),
 

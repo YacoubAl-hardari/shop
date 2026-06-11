@@ -50,17 +50,17 @@ class UserMerchantsTable
                 TextColumn::make('budgetCategory.name')
                     ->label('فئة الميزانية')
                     ->badge()
-                    ->color(fn ($record) => $record->budgetCategory?->color ?? 'gray')
-                    ->icon(fn ($record) => $record->budgetCategory?->icon ?? 'heroicon-o-tag')
+                    ->color(fn($record) => $record->budgetCategory?->color ?? 'gray')
+                    ->icon(fn($record) => $record->budgetCategory?->icon ?? 'heroicon-o-tag')
                     ->placeholder('غير مصنف')
                     ->sortable()
                     ->searchable(),
 
                 TextColumn::make('balance')
                     ->label('الرصيد')
-                    ->money('SAR')
+
                     ->sortable()
-                    ->color(fn ($state) => $state > 0 ? 'danger' : 'success'),
+                    ->color(fn($state) => $state > 0 ? 'danger' : 'success'),
 
                 IconColumn::make('is_active')
                     ->label('الحالة')
@@ -87,14 +87,14 @@ class UserMerchantsTable
 
                 SelectFilter::make('budget_category_id')
                     ->label('فئة الميزانية')
-                    ->relationship('budgetCategory', 'name', fn ($query) => $query->where('user_id', Auth::id())),
+                    ->relationship('budgetCategory', 'name', fn($query) => $query->where('user_id', Auth::id())),
             ])
             ->recordActions([
                 Action::make('financial_stats')
                     ->label('الإحصائيات المالية')
                     ->icon('heroicon-o-chart-bar')
                     ->color('success')
-                    ->url(fn ($record) => UserMerchantResource::getUrl('financial-stats', ['record' => $record])),
+                    ->url(fn($record) => UserMerchantResource::getUrl('financial-stats', ['record' => $record])),
             ])
             ->bulkActions([
                 // Bulk actions will be handled by the resource

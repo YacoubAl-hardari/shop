@@ -13,19 +13,19 @@ use Filament\Widgets\TableWidget as BaseWidget;
 class SimilarProductsComparisonWidget extends BaseWidget
 {
     protected static bool $isDiscovered = false;
-    
+
     protected static ?string $heading = 'جميع المنتجات مع مقارنة الأسعار';
-    
+
     protected static ?string $subheading = 'عرض جميع المنتجات مع إمكانية مقارنة الأسعار بين التجار';
-    
+
     protected static ?int $sort = 5;
-    
-    protected int | string | array $columnSpan = 'full';
-    
+
+    protected int|string|array $columnSpan = 'full';
+
     public function table(Table $table): Table
     {
         $userId = Auth::user()->id;
-        
+
         // Get all products with merchant info
         $similarProducts = UserMerchantProduct::query()
             ->select([
@@ -43,7 +43,7 @@ class SimilarProductsComparisonWidget extends BaseWidget
             ->where('user_merchant_products.is_active', true)
             ->orderBy('user_merchant_products.name')
             ->orderBy('user_merchant_products.price');
-        
+
         return $table
             ->query($similarProducts)
             ->columns([
@@ -53,40 +53,40 @@ class SimilarProductsComparisonWidget extends BaseWidget
                     ->sortable()
                     ->weight('bold')
                     ->color('primary')
-                    ->formatStateUsing(fn ($state) => is_string($state) ? $state : 'غير محدد'),
-                    
+                    ->formatStateUsing(fn($state) => is_string($state) ? $state : 'غير محدد'),
+
                 Tables\Columns\TextColumn::make('merchant_name')
                     ->label('اسم التاجر')
                     ->searchable()
                     ->sortable()
                     ->weight('bold')
-                    ->formatStateUsing(fn ($state) => is_string($state) ? $state : 'غير محدد'),
-                    
+                    ->formatStateUsing(fn($state) => is_string($state) ? $state : 'غير محدد'),
+
                 Tables\Columns\TextColumn::make('name')
                     ->label('اسم المنتج')
                     ->searchable()
                     ->sortable()
                     ->limit(30)
-                    ->formatStateUsing(fn ($state) => is_string($state) ? $state : 'غير محدد'),
-                    
+                    ->formatStateUsing(fn($state) => is_string($state) ? $state : 'غير محدد'),
+
                 Tables\Columns\TextColumn::make('barcode')
                     ->label('الباركود')
                     ->searchable()
                     ->sortable()
-                    ->formatStateUsing(fn ($state) => is_string($state) ? $state : 'غير محدد'),
-                    
+                    ->formatStateUsing(fn($state) => is_string($state) ? $state : 'غير محدد'),
+
                 Tables\Columns\TextColumn::make('price')
                     ->label('السعر')
-                    ->money('SAR')
+
                     ->sortable()
                     ->alignEnd(),
-                    
+
                 Tables\Columns\TextColumn::make('brand')
                     ->label('العلامة التجارية')
                     ->searchable()
                     ->sortable()
-                    ->formatStateUsing(fn ($state) => is_string($state) ? $state : 'غير محدد'),
-                    
+                    ->formatStateUsing(fn($state) => is_string($state) ? $state : 'غير محدد'),
+
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('نشط')
                     ->boolean()

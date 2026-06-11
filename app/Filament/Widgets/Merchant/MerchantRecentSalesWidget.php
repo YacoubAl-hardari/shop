@@ -38,7 +38,7 @@ class MerchantRecentSalesWidget extends BaseWidget
                     ->placeholder('—'),
                 TextColumn::make('total_amount')
                     ->label('الإجمالي')
-                    ->money('SAR'),
+                ,
                 TextColumn::make('payment_type')
                     ->label('نوع الدفع')
                     ->badge(),

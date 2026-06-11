@@ -42,13 +42,13 @@ class MerchantLowStockWidget extends BaseWidget
                 TextColumn::make('stock_quantity')
                     ->label('المخزون')
                     ->badge()
-                    ->color(fn ($state): string => (float) $state <= 0 ? 'danger' : 'warning'),
+                    ->color(fn($state): string => (float) $state <= 0 ? 'danger' : 'warning'),
                 TextColumn::make('unit')
                     ->label('الوحدة')
                     ->placeholder('—'),
                 TextColumn::make('price')
                     ->label('السعر')
-                    ->money('SAR'),
+                ,
             ])
             ->emptyStateHeading('المخزون جيد')
             ->emptyStateDescription('لا توجد منتجات بمخزون منخفض حالياً')

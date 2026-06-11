@@ -29,11 +29,11 @@ class BudgetCategoriesTable
 
                 TextColumn::make('budget_limit')
                     ->label('حد الميزانية')
-                    ->money('SAR'),
+                ,
 
                 TextColumn::make('spent_amount')
                     ->label('المصروف')
-                    ->money('SAR'),
+                ,
 
                 IconColumn::make('is_active')
                     ->label('نشطة')

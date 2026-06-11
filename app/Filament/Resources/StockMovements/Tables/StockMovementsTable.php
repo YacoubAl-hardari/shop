@@ -34,21 +34,21 @@ class StockMovementsTable
                     ->searchable(query: function ($query, string $search) {
                         $query->whereHas('product', function ($q) use ($search) {
                             $q->where('name', 'like', "%{$search}%")
-                              ->orWhere('barcode', 'like', "%{$search}%")
-                              ->orWhere('sku', 'like', "%{$search}%");
+                                ->orWhere('barcode', 'like', "%{$search}%")
+                                ->orWhere('sku', 'like', "%{$search}%");
                         });
                     })
                     ->sortable(),
 
                 BadgeColumn::make('movement_type')
                     ->label('نوع الحركة')
-                    ->formatStateUsing(fn (StockMovementType $state) => $state->label())
-                    ->color(fn (StockMovementType $state) => $state->color()),
+                    ->formatStateUsing(fn(StockMovementType $state) => $state->label())
+                    ->color(fn(StockMovementType $state) => $state->color()),
 
                 IconColumn::make('direction')
                     ->label('الاتجاه')
-                    ->icon(fn (string $state) => $state === 'in' ? 'heroicon-o-arrow-down-circle' : 'heroicon-o-arrow-up-circle')
-                    ->color(fn (string $state) => $state === 'in' ? 'success' : 'danger'),
+                    ->icon(fn(string $state) => $state === 'in' ? 'heroicon-o-arrow-down-circle' : 'heroicon-o-arrow-up-circle')
+                    ->color(fn(string $state) => $state === 'in' ? 'success' : 'danger'),
 
                 TextColumn::make('quantity')
                     ->label('الكمية')
@@ -66,12 +66,12 @@ class StockMovementsTable
 
                 TextColumn::make('unit_cost')
                     ->label('تكلفة الوحدة')
-                    ->money('SAR')
+
                     ->toggleable(),
 
                 TextColumn::make('total_cost')
                     ->label('إجمالي التكلفة')
-                    ->money('SAR'),
+                ,
 
                 TextColumn::make('notes')
                     ->label('ملاحظات')
@@ -85,7 +85,7 @@ class StockMovementsTable
 
                 SelectFilter::make('merchant_product_id')
                     ->label('المنتج')
-                    ->options(fn () => MerchantProduct::pluck('name', 'id'))
+                    ->options(fn() => MerchantProduct::pluck('name', 'id'))
                     ->searchable(),
 
                 SelectFilter::make('direction')
@@ -100,8 +100,8 @@ class StockMovementsTable
                     ])
                     ->query(function ($query, array $data) {
                         return $query
-                            ->when($data['from'], fn ($q, $v) => $q->whereDate('created_at', '>=', $v))
-                            ->when($data['to'],   fn ($q, $v) => $q->whereDate('created_at', '<=', $v));
+                            ->when($data['from'], fn($q, $v) => $q->whereDate('created_at', '>=', $v))
+                            ->when($data['to'], fn($q, $v) => $q->whereDate('created_at', '<=', $v));
                     }),
             ])
             ->defaultSort('created_at', 'desc')

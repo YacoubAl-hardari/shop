@@ -22,24 +22,24 @@ class MerchantCustomerFinancialTransferInfolist
                             TextEntry::make('status')
                                 ->label('الحالة')
                                 ->badge()
-                                ->color(fn ($state): string => $state instanceof CustomerFinancialTransferStatus
+                                ->color(fn($state): string => $state instanceof CustomerFinancialTransferStatus
                                     ? $state->getColor()
                                     : 'gray')
-                                ->formatStateUsing(fn ($state): string => $state instanceof CustomerFinancialTransferStatus
+                                ->formatStateUsing(fn($state): string => $state instanceof CustomerFinancialTransferStatus
                                     ? $state->getLabel()
                                     : (string) $state),
                             TextEntry::make('purpose')
                                 ->label('الغرض')
                                 ->badge()
-                                ->color(fn ($state): string => $state instanceof CustomerFinancialTransferPurpose
+                                ->color(fn($state): string => $state instanceof CustomerFinancialTransferPurpose
                                     ? ($state === CustomerFinancialTransferPurpose::PREPAID ? 'info' : 'success')
                                     : 'gray')
-                                ->formatStateUsing(fn ($state): string => $state instanceof CustomerFinancialTransferPurpose
+                                ->formatStateUsing(fn($state): string => $state instanceof CustomerFinancialTransferPurpose
                                     ? $state->getLabel()
                                     : (string) $state),
                             TextEntry::make('amount')
                                 ->label('المبلغ')
-                                ->money('SAR')
+
                                 ->weight('bold'),
                             TextEntry::make('created_at')
                                 ->label('تاريخ الطلب')
@@ -67,22 +67,22 @@ class MerchantCustomerFinancialTransferInfolist
                             TextEntry::make('payment_method')
                                 ->label('طريقة الدفع')
                                 ->badge()
-                                ->color(fn (?string $state): string => match ($state) {
+                                ->color(fn(?string $state): string => match ($state) {
                                     'cash' => 'success',
                                     'card' => 'info',
                                     'bank_transfer' => 'primary',
                                     default => 'gray',
                                 })
-                                ->formatStateUsing(fn (?string $state): string => self::paymentMethodLabel($state)),
+                                ->formatStateUsing(fn(?string $state): string => self::paymentMethodLabel($state)),
                             TextEntry::make('paymentAccount.name')
                                 ->label('حساب الاستلام')
                                 ->placeholder('—')
-                                ->visible(fn ($record): bool => in_array($record->payment_method, ['card', 'bank_transfer'], true)),
+                                ->visible(fn($record): bool => in_array($record->payment_method, ['card', 'bank_transfer'], true)),
                             TextEntry::make('paymentAccount.account_number')
                                 ->label('رقم الحساب / البطاقة')
                                 ->copyable()
                                 ->placeholder('—')
-                                ->visible(fn ($record): bool => $record->paymentAccount !== null),
+                                ->visible(fn($record): bool => $record->paymentAccount !== null),
                             TextEntry::make('reference_number')
                                 ->label('مرجع العملية')
                                 ->copyable()
@@ -98,7 +98,7 @@ class MerchantCustomerFinancialTransferInfolist
                         ->label(false)
                         ->placeholder('لا توجد ملاحظات'),
                 ])
-                ->visible(fn ($record): bool => filled($record->notes))
+                ->visible(fn($record): bool => filled($record->notes))
                 ->columnSpanFull(),
 
             Section::make('المراجعة')
@@ -116,15 +116,15 @@ class MerchantCustomerFinancialTransferInfolist
                             TextEntry::make('merchantCustomerPayment.id')
                                 ->label('رقم السداد المسجّل')
                                 ->placeholder('—')
-                                ->visible(fn ($record): bool => $record->merchant_customer_payment_id !== null),
+                                ->visible(fn($record): bool => $record->merchant_customer_payment_id !== null),
                         ]),
                     TextEntry::make('rejection_reason')
                         ->label('سبب الرفض')
                         ->color('danger')
                         ->columnSpanFull()
-                        ->visible(fn ($record): bool => $record->status === CustomerFinancialTransferStatus::REJECTED),
+                        ->visible(fn($record): bool => $record->status === CustomerFinancialTransferStatus::REJECTED),
                 ])
-                ->visible(fn ($record): bool => $record->reviewed_by !== null
+                ->visible(fn($record): bool => $record->reviewed_by !== null
                     || $record->status === CustomerFinancialTransferStatus::REJECTED
                     || $record->status === CustomerFinancialTransferStatus::APPROVED)
                 ->columnSpanFull(),

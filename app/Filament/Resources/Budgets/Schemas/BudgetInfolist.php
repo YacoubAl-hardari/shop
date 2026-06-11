@@ -21,7 +21,7 @@ class BudgetInfolist
 
                         TextEntry::make('period')
                             ->label('الفترة')
-                            ->formatStateUsing(fn ($state) => $state->getLabel()),
+                            ->formatStateUsing(fn($state) => $state->getLabel()),
                     ]),
 
                     TextEntry::make('description')
@@ -30,15 +30,15 @@ class BudgetInfolist
                     Grid::make(4)->schema([
                         TextEntry::make('total_limit')
                             ->label('حد الميزانية')
-                            ->money('SAR'),
+                        ,
 
                         TextEntry::make('spent_amount')
                             ->label('المصروف')
-                            ->money('SAR'),
+                        ,
 
                         TextEntry::make('remaining_amount')
                             ->label('المتبقي')
-                            ->money('SAR'),
+                        ,
 
                         IconEntry::make('is_active')
                             ->label('نشطة')

@@ -33,11 +33,11 @@ class BudgetCategoryInfolist
                     Grid::make(4)->schema([
                         TextEntry::make('budget_limit')
                             ->label('حد الميزانية')
-                            ->money('SAR'),
+                        ,
 
                         TextEntry::make('spent_amount')
                             ->label('المصروف')
-                            ->money('SAR'),
+                        ,
 
                         IconEntry::make('is_active')
                             ->label('نشطة')

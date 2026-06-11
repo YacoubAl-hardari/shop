@@ -40,16 +40,16 @@ class PosSaleReturnsTable
 
                 TextColumn::make('returned_amount')
                     ->label('قيمة المُرجَع')
-                    ->money('SAR'),
+                ,
 
                 TextColumn::make('exchange_amount')
                     ->label('قيمة البديل')
-                    ->money('SAR')
+
                     ->toggleable(),
 
                 TextColumn::make('price_difference')
                     ->label('فارق السعر')
-                    ->money('SAR')
+
                     ->color(fn($record) => (float) $record->price_difference > 0
                         ? 'success'
                         : ((float) $record->price_difference < 0 ? 'danger' : 'gray'))

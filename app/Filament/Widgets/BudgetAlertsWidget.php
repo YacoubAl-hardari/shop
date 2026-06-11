@@ -13,7 +13,7 @@ class BudgetAlertsWidget extends BaseWidget
 {
     protected static ?int $sort = 4;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     public function getHeading(): ?string
     {
@@ -31,24 +31,24 @@ class BudgetAlertsWidget extends BaseWidget
             ->columns([
                 Tables\Columns\IconColumn::make('type')
                     ->label('')
-                    ->icon(fn ($record) => $record->type->getIcon())
-                    ->color(fn ($record) => $record->type->getColor()),
+                    ->icon(fn($record) => $record->type->getIcon())
+                    ->color(fn($record) => $record->type->getColor()),
 
                 Tables\Columns\TextColumn::make('title')
                     ->label('التنبيه')
                     ->searchable()
                     ->weight('bold')
-                    ->description(fn ($record) => $record->message),
+                    ->description(fn($record) => $record->message),
 
                 Tables\Columns\TextColumn::make('trigger_percentage')
                     ->label('النسبة')
-                    ->formatStateUsing(fn ($state) => $state ? $state . '%' : '-')
+                    ->formatStateUsing(fn($state) => $state ? $state . '%' : '-')
                     ->badge()
-                    ->color(fn ($record) => $record->type->getColor()),
+                    ->color(fn($record) => $record->type->getColor()),
 
                 Tables\Columns\TextColumn::make('current_amount')
                     ->label('المبلغ')
-                    ->money('SAR'),
+                ,
 
                 Tables\Columns\IconColumn::make('is_read')
                     ->label('مقروء')
@@ -68,8 +68,8 @@ class BudgetAlertsWidget extends BaseWidget
                     ->label('تمييز كمقروء')
                     ->icon('heroicon-o-check')
                     ->color('success')
-                    ->visible(fn ($record) => !$record->is_read)
-                    ->action(fn ($record) => $record->markAsRead()),
+                    ->visible(fn($record) => !$record->is_read)
+                    ->action(fn($record) => $record->markAsRead()),
             ])
             ->paginated([5, 10])
             ->emptyStateHeading('لا توجد تنبيهات')

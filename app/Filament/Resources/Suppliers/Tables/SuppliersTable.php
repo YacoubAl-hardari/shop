@@ -16,7 +16,7 @@ class SuppliersTable
             ->columns([
                 TextColumn::make('name')->label('الاسم')->searchable(),
                 TextColumn::make('phone')->label('الهاتف'),
-                TextColumn::make('balance')->label('الرصيد')->money('SAR'),
+                TextColumn::make('balance')->label('الرصيد'),
                 IconColumn::make('is_active')->label('نشط')->boolean(),
             ])
             ->recordActions([ViewAction::make(), EditAction::make()]);

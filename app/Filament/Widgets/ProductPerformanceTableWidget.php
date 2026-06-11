@@ -14,19 +14,19 @@ use Filament\Widgets\TableWidget as BaseWidget;
 class ProductPerformanceTableWidget extends BaseWidget
 {
     protected static bool $isDiscovered = false;
-    
+
     protected static ?string $heading = 'جدول مقارنة أداء المنتجات بين التجار';
-    
+
     protected static ?string $subheading = 'مقارنة مفصلة للمنتجات والأسعار والمبيعات';
-    
+
     protected static ?int $sort = 4;
-    
-    protected int | string | array $columnSpan = 'full';
-    
+
+    protected int|string|array $columnSpan = 'full';
+
     public function table(Table $table): Table
     {
         $userId = Auth::user()->id;
-        
+
         return $table
             ->query(
                 UserMerchantProduct::query()
@@ -49,45 +49,45 @@ class ProductPerformanceTableWidget extends BaseWidget
                     ->searchable()
                     ->sortable()
                     ->weight('bold')
-                    ->formatStateUsing(fn ($state) => is_string($state) ? $state : 'غير محدد'),
-                    
+                    ->formatStateUsing(fn($state) => is_string($state) ? $state : 'غير محدد'),
+
                 Tables\Columns\TextColumn::make('name')
                     ->label('اسم المنتج')
                     ->searchable()
                     ->sortable()
                     ->limit(30)
-                    ->formatStateUsing(fn ($state) => is_string($state) ? $state : 'غير محدد'),
-                    
+                    ->formatStateUsing(fn($state) => is_string($state) ? $state : 'غير محدد'),
+
                 Tables\Columns\TextColumn::make('barcode')
                     ->label('الباركود')
                     ->searchable()
                     ->sortable()
-                    ->formatStateUsing(fn ($state) => is_string($state) ? $state : 'غير محدد'),
-                    
+                    ->formatStateUsing(fn($state) => is_string($state) ? $state : 'غير محدد'),
+
                 Tables\Columns\TextColumn::make('price')
                     ->label('السعر')
-                    ->money('SAR')
+
                     ->sortable()
                     ->alignEnd(),
-                    
+
                 Tables\Columns\TextColumn::make('total_quantity_sold')
                     ->label('الكمية المباعة')
                     ->numeric()
                     ->sortable()
                     ->alignEnd(),
-                    
+
                 Tables\Columns\TextColumn::make('total_revenue')
                     ->label('إجمالي الإيرادات')
-                    ->money('SAR')
+
                     ->sortable()
                     ->alignEnd(),
-                    
+
                 Tables\Columns\TextColumn::make('orders_count')
                     ->label('عدد الطلبات')
                     ->numeric()
                     ->sortable()
                     ->alignEnd(),
-                    
+
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('نشط')
                     ->boolean()
@@ -101,7 +101,7 @@ class ProductPerformanceTableWidget extends BaseWidget
                             ->where('is_active', true)
                             ->pluck('name', 'name')
                     ),
-                    
+
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('المنتجات النشطة')
                     ->boolean()

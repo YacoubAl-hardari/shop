@@ -5,6 +5,7 @@ namespace App\Filament\Resources\PosSaleReturns;
 use App\Enums\UserType;
 use App\Filament\Concerns\HasRoleAccess;
 use App\Filament\Resources\PosSaleReturns\Schemas\PosSaleReturnForm;
+use App\Filament\Resources\PosSaleReturns\Schemas\PosSaleReturnInfolist;
 use App\Filament\Resources\PosSaleReturns\Tables\PosSaleReturnsTable;
 use App\Models\PosSaleReturn;
 use BackedEnum;
@@ -34,6 +35,11 @@ class PosSaleReturnResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return PosSaleReturnForm::configure($schema);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return PosSaleReturnInfolist::configure($schema);
     }
 
     public static function table(Table $table): Table

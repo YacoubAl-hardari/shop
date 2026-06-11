@@ -33,9 +33,9 @@ class PosSalesTable
 
                 TextColumn::make('payment_type')
                     ->label('نوع الدفع')
-                    ->formatStateUsing(fn (SalePaymentType $state): string => $state->displayLabel())
+                    ->formatStateUsing(fn(SalePaymentType $state): string => $state->displayLabel())
                     ->badge()
-                    ->color(fn (SalePaymentType $state): string => match ($state) {
+                    ->color(fn(SalePaymentType $state): string => match ($state) {
                         SalePaymentType::CASH => 'success',
                         SalePaymentType::CREDIT => 'danger',
                         SalePaymentType::PARTIAL => 'warning',
@@ -43,28 +43,28 @@ class PosSalesTable
 
                 TextColumn::make('payment_method')
                     ->label('طريقة السداد')
-                    ->formatStateUsing(fn ($state, PosSale $record): string => $record->paymentMethodLabel() ?? '—')
+                    ->formatStateUsing(fn($state, PosSale $record): string => $record->paymentMethodLabel() ?? '—')
                     ->placeholder('—'),
 
                 TextColumn::make('total_amount')
                     ->label('إجمالي الفاتورة')
-                    ->money('SAR')
+
                     ->sortable(),
 
                 TextColumn::make('paid_amount')
                     ->label('المبلغ المدفوع')
-                    ->money('SAR')
+
                     ->toggleable(),
 
                 TextColumn::make('credit_amount')
                     ->label('المبلغ المتبقي (الآجل)')
-                    ->money('SAR')
+
                     ->toggleable(),
 
                 TextColumn::make('status')
                     ->label('الحالة')
                     ->badge()
-                    ->color(fn ($state) => $state === 'completed' ? 'success' : 'danger'),
+                    ->color(fn($state) => $state === 'completed' ? 'success' : 'danger'),
             ])
             ->filters([
                 SelectFilter::make('payment_type')

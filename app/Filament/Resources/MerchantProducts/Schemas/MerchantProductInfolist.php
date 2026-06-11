@@ -19,15 +19,15 @@ class MerchantProductInfolist
                     TextEntry::make('sku')->label('الرمز الداخلي'),
                     TextEntry::make('supplier.name')->label('المورد')->placeholder('—'),
                     TextEntry::make('distributor.name')->label('الموزع')->placeholder('—'),
-                    TextEntry::make('price')->label('السعر')->money('SAR'),
-                    TextEntry::make('cost')->label('التكلفة')->money('SAR'),
+                    TextEntry::make('price')->label('السعر'),
+                    TextEntry::make('cost')->label('التكلفة'),
                     TextEntry::make('stock_quantity')->label('الكمية'),
                     TextEntry::make('unit')->label('الوحدة'),
                     IconEntry::make('is_active')->label('نشط')->boolean(),
                 ])
                 ->columns(3)
                 ->columnSpanFull()
-                ,
+            ,
         ]);
     }
 }

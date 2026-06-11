@@ -25,7 +25,7 @@ class MerchantProductsTable
                 TextColumn::make('sku')->label('الرمز')->toggleable(),
                 TextColumn::make('supplier.name')->label('المورد')->placeholder('—')->toggleable(),
                 TextColumn::make('distributor.name')->label('الموزع')->placeholder('—')->toggleable(),
-                TextColumn::make('price')->label('السعر')->money('SAR'),
+                TextColumn::make('price')->label('السعر'),
                 TextColumn::make('stock_quantity')->label('المخزون'),
                 IconColumn::make('is_active')->label('نشط')->boolean(),
             ])

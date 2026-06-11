@@ -21,19 +21,19 @@ class BudgetsTable
 
                 TextColumn::make('period')
                     ->label('الفترة')
-                    ->formatStateUsing(fn ($state) => $state->getLabel()),
+                    ->formatStateUsing(fn($state) => $state->getLabel()),
 
                 TextColumn::make('total_limit')
                     ->label('حد الميزانية')
-                    ->money('SAR'),
+                ,
 
                 TextColumn::make('spent_amount')
                     ->label('المصروف')
-                    ->money('SAR'),
+                ,
 
                 TextColumn::make('remaining_amount')
                     ->label('المتبقي')
-                    ->money('SAR'),
+                ,
 
                 IconColumn::make('is_active')
                     ->label('نشطة')

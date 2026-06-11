@@ -19,12 +19,12 @@ class MerchantCustomerInfolist
                     TextEntry::make('email')->label('البريد'),
                     TextEntry::make('user.name')->label('المستخدم المرتبط')->placeholder('غير مرتبط'),
                     TextEntry::make('user.email')->label('بريد المستخدم')->placeholder('—'),
-                    TextEntry::make('balance')->label('المديونية')->money('SAR'),
-                    TextEntry::make('credit_balance')->label('الرصيد الفائض')->money('SAR'),
+                    TextEntry::make('balance')->label('المديونية'),
+                    TextEntry::make('credit_balance')->label('الرصيد الفائض'),
                     IconEntry::make('is_active')->label('نشط')->boolean(),
                     IconEntry::make('activeStatementShare')
                         ->label('مشاركة كشف الحساب')
-                        ->state(fn ($record): bool => $record->isStatementShared())
+                        ->state(fn($record): bool => $record->isStatementShared())
                         ->boolean()
                         ->trueIcon('heroicon-o-check-circle')
                         ->falseIcon('heroicon-o-x-circle')
@@ -33,7 +33,7 @@ class MerchantCustomerInfolist
                 ])
                 ->columns(3)
                 ->columnSpanFull()
-                ,
+            ,
         ]);
     }
 }
