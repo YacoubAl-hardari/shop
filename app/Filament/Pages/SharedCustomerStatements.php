@@ -85,11 +85,9 @@ class SharedCustomerStatements extends Page implements HasTable
                 TextColumn::make('merchantCustomer.name')
                     ->label('اسمك لدى التاجر'),
                 TextColumn::make('merchantCustomer.balance')
-                    ->label('المديونية')
-                    ->money('SAR'),
+                    ->label('المديونية'),
                 TextColumn::make('merchantCustomer.credit_balance')
-                    ->label('الرصيد الفائض')
-                    ->money('SAR'),
+                    ->label('الرصيد الفائض'),
                 TextColumn::make('shared_at')
                     ->label('تاريخ المشاركة')
                     ->dateTime('Y-m-d H:i'),

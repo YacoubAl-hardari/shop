@@ -466,3 +466,364 @@ it('records damaged return correctly without restoring final stock and posts to 
     expect($damagedLine)->not->toBeNull();
     expect((float) $damagedLine->debit_amount)->toBe(10.00);
 });
+
+it('reduces customer receivable balance when return settles against statement', function () {
+    $customer = MerchantCustomer::create([
+        'team_id' => $this->team->id,
+        'name' => 'Credit Customer',
+        'balance' => 0.00,
+        'credit_balance' => 0.00,
+    ]);
+
+    $sale = $this->saleService->createSale(
+        $this->team,
+        [
+            [
+                'merchant_product_id' => $this->product->id,
+                'product_name' => $this->product->name,
+                'quantity' => 1.0,
+                'unit_price' => 350.00,
+            ],
+        ],
+        SalePaymentType::CREDIT,
+        0,
+        $customer,
+        'cash'
+    );
+
+    expect((float) $customer->fresh()->balance)->toBe(350.00);
+
+    $saleItem = $sale->items->first();
+
+    $saleReturn = $this->returnService->processReturn(
+        $this->team,
+        $sale,
+        [
+            [
+                'pos_sale_item_id' => $saleItem->id,
+                'merchant_product_id' => $this->product->id,
+                'product_name' => $this->product->name,
+                'quantity_returned' => 1.0,
+                'unit_price' => 350.00,
+                'unit_cost' => 10.00,
+                'item_condition' => 'resellable',
+                'return_reason' => 'changed_mind',
+            ],
+        ],
+        RefundMethod::REDUCE_RECEIVABLE
+    );
+
+    expect((float) $customer->fresh()->balance)->toBe(0.00);
+    expect($saleReturn->refund_method)->toBe(RefundMethod::REDUCE_RECEIVABLE);
+
+    $receivableLine = \App\Models\JournalLine::with('account')
+        ->whereHas('journalEntry', fn ($query) => $query
+            ->where('reference_id', $saleReturn->id)
+            ->where('reference_type', \App\Models\PosSaleReturn::class)
+        )
+        ->get()
+        ->first(fn ($line) => $line->account->code === '1101' && (float) $line->credit_amount === 350.00);
+
+    expect($receivableLine)->not->toBeNull();
+});
+
+it('blocks return when invoice merchandise was fully returned already', function () {
+    $customer = MerchantCustomer::create([
+        'team_id' => $this->team->id,
+        'name' => 'Fully Returned Customer',
+        'balance' => 0.00,
+    ]);
+
+    $sale = $this->saleService->createSale(
+        $this->team,
+        [[
+            'merchant_product_id' => $this->product->id,
+            'product_name' => $this->product->name,
+            'quantity' => 1.0,
+            'unit_price' => 350.00,
+        ]],
+        SalePaymentType::CREDIT,
+        0,
+        $customer,
+        'cash'
+    );
+
+    $saleItem = $sale->items->first();
+
+    $this->returnService->processReturn(
+        $this->team,
+        $sale,
+        [[
+            'pos_sale_item_id' => $saleItem->id,
+            'merchant_product_id' => $this->product->id,
+            'product_name' => $this->product->name,
+            'quantity_returned' => 1.0,
+            'unit_price' => 350.00,
+            'unit_cost' => 10.00,
+            'item_condition' => 'resellable',
+        ]],
+        RefundMethod::REDUCE_RECEIVABLE
+    );
+
+    try {
+        $this->returnService->processReturn(
+            $this->team,
+            $sale->fresh(['returns']),
+            [[
+                'pos_sale_item_id' => $saleItem->id,
+                'merchant_product_id' => $this->product->id,
+                'product_name' => $this->product->name,
+                'quantity_returned' => 1.0,
+                'unit_price' => 350.00,
+                'unit_cost' => 10.00,
+                'item_condition' => 'resellable',
+            ]],
+            RefundMethod::REDUCE_RECEIVABLE
+        );
+        $this->fail('Should have blocked duplicate full return');
+    } catch (\InvalidArgumentException $e) {
+        expect($e->getMessage())->toContain('تم إرجاع قيمة هذه الفاتورة بالكامل');
+    }
+});
+
+it('blocks credit note on fully credit sales', function () {
+    $customer = MerchantCustomer::create([
+        'team_id' => $this->team->id,
+        'name' => 'Credit Only Customer',
+        'balance' => 0.00,
+    ]);
+
+    $sale = $this->saleService->createSale(
+        $this->team,
+        [[
+            'merchant_product_id' => $this->product->id,
+            'product_name' => $this->product->name,
+            'quantity' => 1.0,
+            'unit_price' => 1100.00,
+        ]],
+        SalePaymentType::CREDIT,
+        0,
+        $customer,
+        'cash'
+    );
+
+    $saleItem = $sale->items->first();
+
+    try {
+        $this->returnService->processReturn(
+            $this->team,
+            $sale,
+            [[
+                'pos_sale_item_id' => $saleItem->id,
+                'merchant_product_id' => $this->product->id,
+                'product_name' => $this->product->name,
+                'quantity_returned' => 1.0,
+                'unit_price' => 1100.00,
+                'unit_cost' => 10.00,
+                'item_condition' => 'resellable',
+            ]],
+            RefundMethod::CREDIT_NOTE
+        );
+        $this->fail('Should have blocked credit note on credit sale');
+    } catch (\InvalidArgumentException $e) {
+        expect($e->getMessage())->toContain('آجلة');
+    }
+});
+
+it('limits credit note on partial sales to the cash portion only', function () {
+    $customer = MerchantCustomer::create([
+        'team_id' => $this->team->id,
+        'name' => 'Partial Credit Note Customer',
+        'balance' => 0.00,
+    ]);
+
+    $sale = $this->saleService->createSale(
+        $this->team,
+        [[
+            'merchant_product_id' => $this->product->id,
+            'product_name' => $this->product->name,
+            'quantity' => 1.0,
+            'unit_price' => 100.00,
+        ]],
+        SalePaymentType::PARTIAL,
+        40.00,
+        $customer,
+        'cash'
+    );
+
+    $saleItem = $sale->items->first();
+
+    try {
+        $this->returnService->processReturn(
+            $this->team,
+            $sale,
+            [[
+                'pos_sale_item_id' => $saleItem->id,
+                'merchant_product_id' => $this->product->id,
+                'product_name' => $this->product->name,
+                'quantity_returned' => 1.0,
+                'unit_price' => 100.00,
+                'unit_cost' => 10.00,
+                'item_condition' => 'resellable',
+            ]],
+            RefundMethod::CREDIT_NOTE
+        );
+        $this->fail('Should have blocked credit note above cash portion');
+    } catch (\InvalidArgumentException $e) {
+        expect($e->getMessage())->toContain('نقداً');
+    }
+
+    $partialReturn = $this->returnService->processReturn(
+        $this->team,
+        $sale,
+        [[
+            'pos_sale_item_id' => $saleItem->id,
+            'merchant_product_id' => $this->product->id,
+            'product_name' => $this->product->name,
+            'quantity_returned' => 0.4,
+            'unit_price' => 100.00,
+            'unit_cost' => 10.00,
+            'item_condition' => 'resellable',
+        ]],
+        RefundMethod::CREDIT_NOTE
+    );
+
+    expect((float) $partialReturn->credit_note_amount)->toBe(40.00);
+    expect((float) $customer->fresh()->credit_balance)->toBe(40.00);
+});
+
+it('blocks receivable reduction on cash sales', function () {
+    $customer = MerchantCustomer::create([
+        'team_id' => $this->team->id,
+        'name' => 'Cash Customer',
+        'balance' => 500.00,
+    ]);
+
+    $sale = $this->saleService->createSale(
+        $this->team,
+        [
+            [
+                'merchant_product_id' => $this->product->id,
+                'product_name' => $this->product->name,
+                'quantity' => 1.0,
+                'unit_price' => 15.00,
+            ],
+        ],
+        SalePaymentType::CASH,
+        15.00,
+        $customer,
+        'cash'
+    );
+
+    $saleItem = $sale->items->first();
+
+    try {
+        $this->returnService->processReturn(
+            $this->team,
+            $sale,
+            [[
+                'pos_sale_item_id' => $saleItem->id,
+                'merchant_product_id' => $this->product->id,
+                'product_name' => $this->product->name,
+                'quantity_returned' => 1.0,
+                'unit_price' => 15.00,
+                'unit_cost' => 10.00,
+                'item_condition' => 'resellable',
+            ]],
+            RefundMethod::REDUCE_RECEIVABLE
+        );
+        $this->fail('Should have blocked receivable reduction on cash sale');
+    } catch (\InvalidArgumentException $e) {
+        expect($e->getMessage())->toContain('نقدية');
+    }
+});
+
+it('blocks receivable reduction when customer debt is insufficient', function () {
+    $customer = MerchantCustomer::create([
+        'team_id' => $this->team->id,
+        'name' => 'Paid Off Customer',
+        'balance' => 0.00,
+    ]);
+
+    $sale = $this->saleService->createSale(
+        $this->team,
+        [[
+            'merchant_product_id' => $this->product->id,
+            'product_name' => $this->product->name,
+            'quantity' => 1.0,
+            'unit_price' => 350.00,
+        ]],
+        SalePaymentType::CREDIT,
+        0,
+        $customer,
+        'cash'
+    );
+
+    $saleItem = $sale->items->first();
+
+    try {
+        $this->returnService->processReturn(
+            $this->team,
+            $sale,
+            [[
+                'pos_sale_item_id' => $saleItem->id,
+                'merchant_product_id' => $this->product->id,
+                'product_name' => $this->product->name,
+                'quantity_returned' => 1.0,
+                'unit_price' => 350.00,
+                'unit_cost' => 10.00,
+                'item_condition' => 'resellable',
+            ]],
+            RefundMethod::REDUCE_RECEIVABLE
+        );
+        $this->fail('Should have blocked receivable reduction without customer debt');
+    } catch (\InvalidArgumentException $e) {
+        expect($e->getMessage())->toContain('مديونية العميل');
+    }
+});
+
+it('splits partial sale returns between receivable and cash', function () {
+    $customer = MerchantCustomer::create([
+        'team_id' => $this->team->id,
+        'name' => 'Partial Customer',
+        'balance' => 0.00,
+    ]);
+
+    $sale = $this->saleService->createSale(
+        $this->team,
+        [[
+            'merchant_product_id' => $this->product->id,
+            'product_name' => $this->product->name,
+            'quantity' => 1.0,
+            'unit_price' => 100.00,
+        ]],
+        SalePaymentType::PARTIAL,
+        40.00,
+        $customer,
+        'cash'
+    );
+
+    expect((float) $customer->fresh()->balance)->toBe(60.00);
+
+    $saleItem = $sale->items->first();
+
+    $saleReturn = $this->returnService->processReturn(
+        $this->team,
+        $sale,
+        [[
+            'pos_sale_item_id' => $saleItem->id,
+            'merchant_product_id' => $this->product->id,
+            'product_name' => $this->product->name,
+            'quantity_returned' => 1.0,
+            'unit_price' => 100.00,
+            'unit_cost' => 10.00,
+            'item_condition' => 'resellable',
+        ]],
+        RefundMethod::SPLIT_SETTLEMENT
+    );
+
+    expect($saleReturn->refund_method)->toBe(RefundMethod::SPLIT_SETTLEMENT);
+    expect((float) $saleReturn->refunded_to_customer)->toBe(40.00);
+    expect((float) $saleReturn->receivable_reduction_amount)->toBe(60.00);
+    expect((float) $customer->fresh()->balance)->toBe(0.00);
+});

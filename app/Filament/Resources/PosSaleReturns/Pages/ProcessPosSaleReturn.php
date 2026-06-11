@@ -7,7 +7,9 @@ use App\Enums\ReturnType;
 use App\Filament\Resources\PosSaleReturns\PosSaleReturnResource;
 use App\Models\MerchantProduct;
 use App\Models\PosSale;
+use App\Models\PosSaleItem;
 use App\Services\PosReturnService;
+use App\Services\PosSaleReturnSettlementService;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Placeholder;
@@ -57,18 +59,29 @@ class ProcessPosSaleReturn extends Page implements HasForms
                             ->afterStateUpdated(function (?string $state, Set $set): void {
                                 if (! $state) {
                                     $this->selectedSale = null;
+                                    $set('return_items', []);
                                     return;
                                 }
                                 $team = Filament::getTenant();
                                 $sale = PosSale::where('team_id', $team->id)
                                     ->where('sale_number', ltrim($state, '0'))
                                     ->orWhere('sale_number', $state)
-                                    ->with('items.merchantProduct')
+                                    ->with(['items.merchantProduct', 'items.returnItems.saleReturn', 'merchantCustomer', 'returns'])
                                     ->first();
                                 $this->selectedSale = $sale;
                                 if ($sale) {
+                                    $settlement = app(PosSaleReturnSettlementService::class);
                                     $set('loaded_sale_id', $sale->id);
                                     $set('merchant_customer_id', $sale->merchant_customer_id);
+                                    $set('refund_method', $settlement->defaultRefundMethod($sale)->value);
+
+                                    $returnable = $sale->items->filter(
+                                        fn (PosSaleItem $item) => $item->returnableQuantity() > 0
+                                    );
+
+                                    $set('return_items', $returnable->count() === 1
+                                        ? [$this->buildReturnItemState($returnable->first())]
+                                        : []);
                                 }
                             })
                             ->suffixIcon(Heroicon::OutlinedMagnifyingGlass),
@@ -79,13 +92,43 @@ class ProcessPosSaleReturn extends Page implements HasForms
                             ->content(function (): string {
                                 $sale = $this->selectedSale;
                                 if (! $sale) return '—';
-                                return implode(' | ', array_filter([
+                                $settlement = app(PosSaleReturnSettlementService::class);
+                                $parts = [
                                     'رقم: '.$sale->sale_number,
                                     'التاريخ: '.$sale->created_at?->format('Y/m/d'),
                                     'العميل: '.($sale->merchantCustomer?->name ?? 'عميل غير مسجّل'),
+                                    'نوع الدفع: '.$sale->paymentTypeLabel(),
                                     'الإجمالي: '.number_format($sale->total_amount, 2).' ر.س',
-                                    'حالة: '.$sale->status,
-                                ]));
+                                ];
+
+                                if ((float) $sale->paid_amount > 0) {
+                                    $parts[] = 'مسدّد: '.number_format($sale->paid_amount, 2).' ر.س';
+                                }
+
+                                if ((float) $sale->credit_amount > 0) {
+                                    $parts[] = 'آجل: '.number_format($sale->credit_amount, 2).' ر.س';
+                                }
+
+                                if ($sale->merchantCustomer) {
+                                    $parts[] = 'مديونية العميل: '.number_format($sale->merchantCustomer->debtBalance(), 2).' ر.س';
+                                }
+
+                                $remainingMerchandise = $settlement->remainingMerchandiseValue($sale);
+                                $priorReturned = $settlement->priorReturnedMerchandiseValue($sale);
+
+                                if ($priorReturned > 0) {
+                                    $parts[] = 'مُرجَع سابقاً: '.number_format($priorReturned, 2).' ر.س';
+                                }
+
+                                if ($remainingMerchandise <= 0) {
+                                    $parts[] = '⚠ الفاتورة مُرجَعة بالكامل — لا يمكن إضافة مرتجع';
+                                } else {
+                                    $parts[] = 'متبقي قابل للإرجاع: '.number_format($remainingMerchandise, 2).' ر.س';
+                                }
+
+                                $parts[] = 'حالة: '.$sale->status;
+
+                                return implode(' | ', $parts);
                             })
                             ->columnSpanFull(),
                     ]),
@@ -98,16 +141,43 @@ class ProcessPosSaleReturn extends Page implements HasForms
                         Repeater::make('return_items')
                             ->label('الأصناف المُرجَعة من الفاتورة')
                             ->addActionLabel('إضافة صنف للإرجاع')
+                            ->addable(fn (Get $get): bool => $this->canAddMoreReturnItems($get))
+                            ->maxItems(fn (): int => $this->countReturnableSaleItems())
+                            ->deletable(fn (Get $get): bool => count($get('return_items') ?? []) > 1)
                             ->live()
                             ->schema([
                                 Select::make('pos_sale_item_id')
                                     ->label('الصنف من الفاتورة')
-                                    ->options(function (): array {
-                                        if (! $this->selectedSale) return [];
-                                        return $this->selectedSale->items->mapWithKeys(fn ($item) => [
-                                            $item->id => $item->product_name.' (كمية: '.$item->quantity.' — سعر: '.$item->unit_price.' ر.س)',
-                                        ])->toArray();
+                                    ->options(function (Get $get): array {
+                                        if (! $this->selectedSale) {
+                                            return [];
+                                        }
+
+                                        $currentId = (int) ($get('pos_sale_item_id') ?? 0);
+                                        $selectedElsewhere = collect($this->data['return_items'] ?? [])
+                                            ->pluck('pos_sale_item_id')
+                                            ->filter()
+                                            ->map(fn ($id) => (int) $id)
+                                            ->reject(fn (int $id) => $id === $currentId);
+
+                                        return $this->selectedSale->items
+                                            ->filter(fn (PosSaleItem $item) => $item->returnableQuantity() > 0)
+                                            ->reject(fn (PosSaleItem $item) => $selectedElsewhere->contains($item->id))
+                                            ->mapWithKeys(function (PosSaleItem $item): array {
+                                                $maxQty = $item->returnableQuantity();
+                                                $label = $item->product_name.' (متبقي: '.$maxQty.' — سعر: '.$item->unit_price.' ر.س)';
+
+                                                if ($item->hasBeenReturned()) {
+                                                    $label = '↩ '.$label;
+                                                }
+
+                                                return [$item->id => $label];
+                                            })
+                                            ->toArray();
                                     })
+                                    ->helperText(fn (): ?string => $this->selectedSale && $this->selectedSale->items->every(fn ($item) => $item->returnableQuantity() <= 0)
+                                        ? 'جميع أصناف هذه الفاتورة مُرجَعة بالكامل.'
+                                        : null)
                                     ->required()
                                     ->live()
                                     ->afterStateUpdated(function ($state, Set $set): void {
@@ -207,14 +277,64 @@ class ProcessPosSaleReturn extends Page implements HasForms
                                         RefundMethod::NONE->value        => 'بدون استرداد (نفس القيمة)',
                                     ];
                                 }
-                                return [
-                                    RefundMethod::CASH->value        => 'نقد للعميل',
-                                    RefundMethod::CREDIT_NOTE->value => 'رصيد دائن للعميل',
-                                ];
+                                if (! $this->selectedSale) {
+                                    return [];
+                                }
+
+                                return app(PosSaleReturnSettlementService::class)
+                                    ->allowedRefundMethods($this->selectedSale);
                             })
                             ->default(RefundMethod::CASH->value)
                             ->required()
-                            ->live(),
+                            ->live()
+                            ->helperText(function (Get $get): ?string {
+                                if (! $this->selectedSale) {
+                                    return null;
+                                }
+
+                                $method = RefundMethod::tryFrom($get('refund_method') ?? '');
+
+                                if (! $method) {
+                                    return null;
+                                }
+
+                                $returnTotal = collect($get('return_items') ?? [])
+                                    ->sum(fn ($i) => (float) ($i['quantity_returned'] ?? 0) * (float) ($i['unit_price'] ?? 0));
+
+                                if ($returnTotal <= 0) {
+                                    return match ($method) {
+                                        RefundMethod::REDUCE_RECEIVABLE => 'متاح للفواتير الآجلة فقط — يُخصم من مديونية العميل دون صرف نقد.',
+                                        RefundMethod::SPLIT_SETTLEMENT  => 'يوزّع المبلغ تلقائياً بين الذمة والنقد حسب نسبة الفاتورة الأصلية.',
+                                        RefundMethod::CASH              => 'متاح للفواتير النقدية — يُسترد المبلغ للعميل نقداً/بطاقة.',
+                                        default                         => null,
+                                    };
+                                }
+
+                                return app(PosSaleReturnSettlementService::class)
+                                    ->settlementPreview($this->selectedSale, $returnTotal, $method);
+                            }),
+
+                        Placeholder::make('settlement_preview')
+                            ->label('معاينة التسوية')
+                            ->columnSpanFull()
+                            ->visible(fn (Get $get): bool => filled($get('refund_method')))
+                            ->content(function (Get $get): string {
+                                if (! $this->selectedSale) {
+                                    return '—';
+                                }
+
+                                $method = RefundMethod::tryFrom($get('refund_method') ?? '');
+
+                                if (! $method) {
+                                    return '—';
+                                }
+
+                                $returnTotal = collect($get('return_items') ?? [])
+                                    ->sum(fn ($i) => (float) ($i['quantity_returned'] ?? 0) * (float) ($i['unit_price'] ?? 0));
+
+                                return app(PosSaleReturnSettlementService::class)
+                                    ->settlementPreview($this->selectedSale, $returnTotal, $method);
+                            }),
 
                         Select::make('merchant_customer_id')
                             ->label('العميل المستلم للرصيد الدائن')
@@ -339,10 +459,32 @@ class ProcessPosSaleReturn extends Page implements HasForms
             return;
         }
 
+        $saleItemIds = collect($data['return_items'])->pluck('pos_sale_item_id')->filter();
+
+        if ($saleItemIds->unique()->count() !== $saleItemIds->count()) {
+            Notification::make()
+                ->title('صنف مكرر')
+                ->body('لا يمكن إضافة نفس الصنف من الفاتورة أكثر من مرة — عدّل الكمية في السطر الأول.')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
         try {
             $returnType   = ReturnType::from($data['return_type']);
             $refundMethod = RefundMethod::from($data['refund_method'] ?? RefundMethod::CASH->value);
             $service      = app(PosReturnService::class);
+
+            $returnTotal = collect($data['return_items'] ?? [])
+                ->sum(fn ($item) => (float) ($item['quantity_returned'] ?? 0) * (float) ($item['unit_price'] ?? 0));
+
+            $this->selectedSale->loadMissing('merchantCustomer', 'returns');
+            app(PosSaleReturnSettlementService::class)->validate(
+                $this->selectedSale,
+                $returnTotal,
+                $refundMethod,
+            );
 
             $returnItems = collect($data['return_items'])->map(fn ($item) => [
                 'pos_sale_item_id'    => $item['pos_sale_item_id'] ?? null,
@@ -420,12 +562,61 @@ class ProcessPosSaleReturn extends Page implements HasForms
                 ->modalHeading('تأكيد الإرجاع / الاستبدال')
                 ->modalDescription('سيتم ترحيل القيود المحاسبية وتحديث المخزون. هذا الإجراء لا يمكن التراجع عنه.')
                 ->action(fn () => $this->processReturn())
-                ->visible(fn () => $this->selectedSale !== null),
+                ->visible(fn (): bool => $this->selectedSale !== null
+                    && app(PosSaleReturnSettlementService::class)->remainingMerchandiseValue($this->selectedSale) > 0),
         ];
     }
 
     public function getTitle(): string
     {
         return 'إرجاع / استبدال بضاعة';
+    }
+
+    protected function countReturnableSaleItems(): int
+    {
+        if (! $this->selectedSale) {
+            return 0;
+        }
+
+        return $this->selectedSale->items
+            ->filter(fn (PosSaleItem $item) => $item->returnableQuantity() > 0)
+            ->count();
+    }
+
+    protected function canAddMoreReturnItems(Get $get): bool
+    {
+        $max = $this->countReturnableSaleItems();
+
+        if ($max <= 1) {
+            return false;
+        }
+
+        $returnItems = $get('return_items') ?? [];
+        $selectedCount = collect($returnItems)
+            ->pluck('pos_sale_item_id')
+            ->filter()
+            ->unique()
+            ->count();
+
+        return $selectedCount < $max && count($returnItems) < $max;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function buildReturnItemState(PosSaleItem $item): array
+    {
+        $maxReturnable = $item->returnableQuantity();
+
+        return [
+            'pos_sale_item_id'    => $item->id,
+            'merchant_product_id' => $item->merchant_product_id,
+            'product_name'        => $item->product_name,
+            'unit_price'          => (float) $item->unit_price,
+            'unit_cost'           => $item->merchantProduct ? (float) $item->merchantProduct->cost : 0,
+            'max_qty'             => $maxReturnable,
+            'quantity_returned'   => min(1, max(0.01, $maxReturnable)),
+            'item_condition'      => 'resellable',
+        ];
     }
 }

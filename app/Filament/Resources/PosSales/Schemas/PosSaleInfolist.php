@@ -2,6 +2,9 @@
 
 namespace App\Filament\Resources\PosSales\Schemas;
 
+use App\Enums\SalePaymentType;
+use App\Models\PosSale;
+use App\Models\PosSaleItem;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Grid;
@@ -10,6 +13,13 @@ use Filament\Infolists\Components\RepeatableEntry;
 
 class PosSaleInfolist
 {
+    private static function returnedItemAttributes(PosSaleItem $item): array
+    {
+        return $item->hasBeenReturned()
+            ? ['class' => 'line-through text-danger-600 dark:text-danger-400']
+            : [];
+    }
+
     public static function configure(Schema $schema): Schema
     {
         return $schema
@@ -34,15 +44,23 @@ class PosSaleInfolist
                                             ->default('عميل نقدي'),
                                         TextEntry::make('payment_type')
                                             ->label('نوع الدفع')
-                                            ->badge(),
-                                        TextEntry::make('payment_method')
-                                            ->label('طريقة الدفع')
-                                            ->formatStateUsing(fn ($state) => match ($state) {
-                                                'cash' => 'نقدي',
-                                                'card' => 'شبكة (بطاقة)',
-                                                'bank_transfer' => 'تحويل بنكي',
-                                                default => $state ?? '—',
+                                            ->formatStateUsing(fn (SalePaymentType $state): string => $state->displayLabel())
+                                            ->badge()
+                                            ->color(fn (SalePaymentType $state): string => match ($state) {
+                                                SalePaymentType::CASH => 'success',
+                                                SalePaymentType::CREDIT => 'danger',
+                                                SalePaymentType::PARTIAL => 'warning',
                                             }),
+                                        TextEntry::make('payment_method')
+                                            ->label('طريقة السداد')
+                                            ->formatStateUsing(fn ($state, PosSale $record): string => $record->paymentMethodLabel() ?? '—')
+                                            ->placeholder('—'),
+                                        TextEntry::make('paymentAccount.name')
+                                            ->label('حساب السداد')
+                                            ->visible(fn (PosSale $record): bool => filled($record->merchant_payment_account_id)),
+                                        TextEntry::make('payment_reference')
+                                            ->label('مرجع العملية')
+                                            ->visible(fn (PosSale $record): bool => filled($record->payment_reference)),
                                     ]),
                             ])
                               ->columnSpanFull()
@@ -57,16 +75,18 @@ class PosSaleInfolist
                                         Grid::make(4)
                                             ->schema([
                                                 TextEntry::make('product_name')
-                                                    ->label('المنتج / الصنف'),
+                                                    ->label('المنتج / الصنف')
+                                                    ->extraAttributes(fn (PosSaleItem $record): array => self::returnedItemAttributes($record)),
                                                 TextEntry::make('quantity')
                                                     ->label('الكمية')
-                                                    ->numeric(),
+                                                    ->numeric()
+                                                    ->extraAttributes(fn (PosSaleItem $record): array => self::returnedItemAttributes($record)),
                                                 TextEntry::make('unit_price')
                                                     ->label('سعر الوحدة')
-                                                    ,
+                                                    ->extraAttributes(fn (PosSaleItem $record): array => self::returnedItemAttributes($record)),
                                                 TextEntry::make('total')
                                                     ->label('الإجمالي')
-                                                    ,
+                                                    ->extraAttributes(fn (PosSaleItem $record): array => self::returnedItemAttributes($record)),
                                             ]),
                                     ]),
                             ])
@@ -94,7 +114,10 @@ class PosSaleInfolist
                                     ->label('المبلغ المدفوع')
                                     ,
                                 TextEntry::make('credit_amount')
-                                    ->label('المبلغ المتبقي')
+                                    ->label(fn (PosSale $record): string => $record->payment_type === SalePaymentType::CREDIT
+                                        || (float) $record->credit_amount > 0
+                                        ? 'المتبقي في الذمة'
+                                        : 'المبلغ المتبقي')
                                     ,
                             ])
                             ,

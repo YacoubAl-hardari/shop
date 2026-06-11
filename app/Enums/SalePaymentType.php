@@ -17,6 +17,15 @@ enum SalePaymentType: string
         };
     }
 
+    public function displayLabel(): string
+    {
+        return match ($this) {
+            self::CASH => 'نقداً',
+            self::CREDIT => 'آجل (ذمم)',
+            self::PARTIAL => 'دفع جزئي',
+        };
+    }
+
     public static function options(): array
     {
         return collect(self::cases())

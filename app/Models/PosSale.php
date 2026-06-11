@@ -61,4 +61,49 @@ class PosSale extends Model
     {
         return $this->hasMany(PosSaleReturn::class);
     }
+
+    public function hasReturnableItems(): bool
+    {
+        return $this->items->contains(
+            fn (PosSaleItem $item) => $item->returnableQuantity() > 0
+        );
+    }
+
+    public function isFullyReturned(): bool
+    {
+        if ($this->items->isEmpty()) {
+            return false;
+        }
+
+        return $this->items->every(
+            fn (PosSaleItem $item) => $item->isFullyReturned()
+        );
+    }
+
+    public function paymentTypeLabel(): string
+    {
+        return $this->payment_type?->displayLabel() ?? '—';
+    }
+
+    public function paymentMethodLabel(): ?string
+    {
+        if ($this->payment_type === SalePaymentType::CREDIT) {
+            return null;
+        }
+
+        if ((float) $this->paid_amount <= 0) {
+            return null;
+        }
+
+        return self::formatPaymentMethod($this->payment_method);
+    }
+
+    public static function formatPaymentMethod(?string $method): string
+    {
+        return match ($method) {
+            'card' => 'بطاقة مدى / ائتمان',
+            'bank_transfer' => 'تحويل بنكي',
+            default => 'نقداً',
+        };
+    }
 }

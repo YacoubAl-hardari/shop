@@ -23,6 +23,7 @@ class PosSaleReturn extends Model
         'exchange_amount',
         'price_difference',
         'refunded_to_customer',
+        'receivable_reduction_amount',
         'charged_to_customer',
         'credit_note_amount',
         'status',
@@ -36,8 +37,9 @@ class PosSaleReturn extends Model
         'returned_amount'       => 'decimal:2',
         'exchange_amount'       => 'decimal:2',
         'price_difference'      => 'decimal:2',
-        'refunded_to_customer'  => 'decimal:2',
-        'charged_to_customer'   => 'decimal:2',
+        'refunded_to_customer'          => 'decimal:2',
+        'receivable_reduction_amount'   => 'decimal:2',
+        'charged_to_customer'           => 'decimal:2',
         'credit_note_amount'    => 'decimal:2',
     ];
 

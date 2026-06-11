@@ -21,6 +21,7 @@ class PosReturnService
     public function __construct(
         protected AccountingService $accountingService,
         protected StockMovementService $stockMovementService,
+        protected PosSaleReturnSettlementService $settlementService,
     ) {}
 
     /**
@@ -54,6 +55,15 @@ class PosReturnService
                 $sale->update(['merchant_customer_id' => $merchantCustomerId]);
                 $sale->refresh();
             }
+
+            $sale->loadMissing('merchantCustomer', 'returns');
+
+            $saleLineIds = collect($returnItems)->pluck('pos_sale_item_id')->filter();
+
+            if ($saleLineIds->unique()->count() !== $saleLineIds->count()) {
+                throw new \InvalidArgumentException('لا يمكن تكرار نفس الصنف من الفاتورة أكثر من مرة في المرتجع الواحد.');
+            }
+
             // التحقق من أن الكميات المرتجعة لا تتجاوز الكميات المباعة في الفاتورة الأصلية (مع مراعاة المرتجعات السابقة)
             foreach ($returnItems as $item) {
                 if (! empty($item['pos_sale_item_id'])) {
@@ -77,18 +87,22 @@ class PosReturnService
                 fn ($i) => (float) $i['quantity_returned'] * (float) $i['unit_price']
             );
 
+            $this->settlementService->validate($sale, $returnedAmount, $refundMethod);
+            $allocation = $this->settlementService->allocateSettlement($sale, $returnedAmount, $refundMethod);
+
             $saleReturn = PosSaleReturn::create([
-                'team_id'              => $team->id,
-                'pos_sale_id'          => $sale->id,
-                'return_number'        => $this->generateReturnNumber($team),
-                'return_type'          => ReturnType::RETURN,
-                'refund_method'        => $refundMethod,
-                'returned_amount'      => $returnedAmount,
-                'exchange_amount'      => 0,
-                'price_difference'     => 0,
-                'refunded_to_customer' => $refundMethod === RefundMethod::CASH ? $returnedAmount : 0,
-                'charged_to_customer'  => 0,
-                'credit_note_amount'   => $refundMethod === RefundMethod::CREDIT_NOTE ? $returnedAmount : 0,
+                'team_id'                      => $team->id,
+                'pos_sale_id'                  => $sale->id,
+                'return_number'                => $this->generateReturnNumber($team),
+                'return_type'                  => ReturnType::RETURN,
+                'refund_method'                => $refundMethod,
+                'returned_amount'              => $returnedAmount,
+                'exchange_amount'              => 0,
+                'price_difference'             => 0,
+                'refunded_to_customer'         => $allocation['cash'],
+                'receivable_reduction_amount'  => $allocation['receivable'],
+                'charged_to_customer'          => 0,
+                'credit_note_amount'           => $refundMethod === RefundMethod::CREDIT_NOTE ? $returnedAmount : 0,
                 'status'               => 'completed',
                 'notes'                => $notes,
                 'processed_by'         => Auth::id(),
@@ -158,6 +172,10 @@ class PosReturnService
             // رصيد دائن للعميل إن اختار credit_note
             if ($refundMethod === RefundMethod::CREDIT_NOTE && $sale->merchantCustomer) {
                 $sale->merchantCustomer->increment('credit_balance', $returnedAmount);
+            }
+
+            if ($allocation['receivable'] > 0 && $sale->merchantCustomer) {
+                $sale->merchantCustomer->decrement('balance', $allocation['receivable']);
             }
 
             return $saleReturn->load('returnItems', 'exchangeItems');
@@ -382,14 +400,19 @@ class PosReturnService
             'description'  => 'عكس إيراد — مرتجع '.$saleReturn->return_number,
         ];
 
-        if ($saleReturn->refund_method === RefundMethod::CASH) {
+        $cashRefund = (float) $saleReturn->refunded_to_customer;
+        $receivableReduction = (float) $saleReturn->receivable_reduction_amount;
+
+        if ($cashRefund > 0) {
             $payMethod = $sale->payment_method ?? 'cash';
             $lines[] = [
                 'account_code' => $this->debitAccountCodeForMethod($payMethod),
-                'credit_amount' => $returnedAmount,
-                'description'   => 'استرداد نقدي للعميل — مرتجع '.$saleReturn->return_number,
+                'credit_amount' => $cashRefund,
+                'description'   => 'استرداد للعميل — مرتجع '.$saleReturn->return_number,
             ];
-        } elseif ($saleReturn->refund_method === RefundMethod::CREDIT_NOTE) {
+        }
+
+        if ($saleReturn->refund_method === RefundMethod::CREDIT_NOTE) {
             $lines[] = [
                 'account_code' => '2101',
                 'credit_amount' => $returnedAmount,
@@ -397,11 +420,10 @@ class PosReturnService
                 'subledger_type' => $sale->merchant_customer_id ? \App\Models\MerchantCustomer::class : null,
                 'subledger_id'   => $sale->merchant_customer_id,
             ];
-        } else {
-            // إذا كانت آجلة → تخفيض من الذمة المدينة
+        } elseif ($receivableReduction > 0) {
             $lines[] = [
                 'account_code' => '1101',
-                'credit_amount' => $returnedAmount,
+                'credit_amount' => $receivableReduction,
                 'description'   => 'تخفيض ذمم — مرتجع '.$saleReturn->return_number,
                 'subledger_type' => $sale->merchant_customer_id ? \App\Models\MerchantCustomer::class : null,
                 'subledger_id'   => $sale->merchant_customer_id,

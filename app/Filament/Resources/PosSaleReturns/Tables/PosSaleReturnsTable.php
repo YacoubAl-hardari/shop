@@ -30,7 +30,7 @@ class PosSaleReturnsTable
                     ->label('رقم الفاتورة الأصلية')
                     ->searchable()
                     ->url(fn($record) => $record->originalSale
-                        ? route('filament.admin.resources.pos-sales.view', ['record' => $record->pos_sale_id, 'tenant' => $record->team_id])
+                        ? route('filament.admin.resources.pos-sales.view', ['record' => $record->pos_sale_id, 'tenant' => $record->team->slug])
                         : null),
 
                 BadgeColumn::make('return_type')

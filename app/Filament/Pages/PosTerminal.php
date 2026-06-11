@@ -336,22 +336,22 @@ class PosTerminal extends Page implements HasForms
         $this->receiptCashTendered = null;
     }
 
-    public function getPaymentMethodLabel(?string $method): string
+    public function getPaymentMethodLabel(?string $method, ?PosSale $sale = null): string
     {
-        return match ($method) {
-            'card' => 'بطاقة مدى / ائتمان',
-            'bank_transfer' => 'تحويل بنكي',
-            default => 'نقداً',
-        };
+        if ($sale) {
+            return $sale->paymentMethodLabel() ?? '—';
+        }
+
+        return PosSale::formatPaymentMethod($method);
     }
 
     public function getPaymentTypeLabel(mixed $type): string
     {
-        return match ($type?->value ?? $type) {
-            'credit' => 'آجل (ذمم)',
-            'partial' => 'دفع جزئي',
-            default => 'نقداً',
-        };
+        if ($type instanceof SalePaymentType) {
+            return $type->displayLabel();
+        }
+
+        return SalePaymentType::tryFrom($type)?->displayLabel() ?? 'نقداً';
     }
 
     public function getMerchantTaxNumber(): ?string

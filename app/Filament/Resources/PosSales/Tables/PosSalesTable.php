@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\PosSales\Tables;
 
+use App\Enums\SalePaymentType;
+use App\Models\PosSale;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -31,22 +33,18 @@ class PosSalesTable
 
                 TextColumn::make('payment_type')
                     ->label('نوع الدفع')
+                    ->formatStateUsing(fn (SalePaymentType $state): string => $state->displayLabel())
                     ->badge()
-                    ->color(fn ($state) => match ($state?->value) {
-                        'cash' => 'success',
-                        'credit' => 'danger',
-                        'partial' => 'warning',
-                        default => 'gray',
+                    ->color(fn (SalePaymentType $state): string => match ($state) {
+                        SalePaymentType::CASH => 'success',
+                        SalePaymentType::CREDIT => 'danger',
+                        SalePaymentType::PARTIAL => 'warning',
                     }),
 
                 TextColumn::make('payment_method')
-                    ->label('طريقة الدفع')
-                    ->formatStateUsing(fn ($state) => match ($state) {
-                        'cash' => 'نقدي',
-                        'card' => 'شبكة (بطاقة)',
-                        'bank_transfer' => 'تحويل بنكي',
-                        default => $state ?? '—',
-                    }),
+                    ->label('طريقة السداد')
+                    ->formatStateUsing(fn ($state, PosSale $record): string => $record->paymentMethodLabel() ?? '—')
+                    ->placeholder('—'),
 
                 TextColumn::make('total_amount')
                     ->label('إجمالي الفاتورة')
@@ -71,11 +69,7 @@ class PosSalesTable
             ->filters([
                 SelectFilter::make('payment_type')
                     ->label('نوع الدفع')
-                    ->options([
-                        'cash' => 'نقدي',
-                        'credit' => 'آجل بالكامل',
-                        'partial' => 'دفع جزئي',
-                    ]),
+                    ->options(SalePaymentType::options()),
             ])
             ->defaultSort('created_at', 'desc')
             ->actions([

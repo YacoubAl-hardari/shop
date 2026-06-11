@@ -943,7 +943,7 @@
                         <div class="space-y-0.5 pt-2 border-t border-dashed border-black text-[10px] border-b pb-2 mb-2">
                             <div class="flex justify-between">
                                 <span class="text-gray-500">طريقة الدفع (Pay Mode):</span>
-                                <span class="font-bold">{{ $this->getPaymentMethodLabel($receipt->payment_method) }}</span>
+                                <span class="font-bold">{{ $this->getPaymentMethodLabel($receipt->payment_method, $receipt) }}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-500">نوع التسوية (Settlement):</span>
