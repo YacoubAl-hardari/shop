@@ -64,6 +64,11 @@ class MerchantCustomer extends Model
         return $this->hasMany(MerchantCustomerPayment::class);
     }
 
+    public function financialTransfers(): HasMany
+    {
+        return $this->hasMany(MerchantCustomerFinancialTransfer::class);
+    }
+
     public function statementShares(): HasMany
     {
         return $this->hasMany(MerchantCustomerStatementShare::class);

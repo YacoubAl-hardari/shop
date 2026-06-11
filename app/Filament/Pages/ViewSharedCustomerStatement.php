@@ -5,6 +5,8 @@ namespace App\Filament\Pages;
 use App\Enums\UserType;
 use App\Filament\Concerns\HasCustomerStatementFilters;
 use App\Filament\Concerns\HasRoleAccess;
+use App\Filament\Concerns\SubmitsCustomerFinancialTransfer;
+use App\Models\MerchantCustomerFinancialTransfer;
 use App\Models\MerchantCustomer;
 use App\Models\MerchantCustomerStatementShare;
 use App\Services\CustomerStatementShareService;
@@ -22,6 +24,7 @@ class ViewSharedCustomerStatement extends Page
 {
     use HasCustomerStatementFilters;
     use HasRoleAccess;
+    use SubmitsCustomerFinancialTransfer;
 
     protected static function allowedRoles(): array
     {
@@ -91,6 +94,8 @@ class ViewSharedCustomerStatement extends Page
     protected function getHeaderActions(): array
     {
         return [
+            $this->makeSubmitPaymentAction(),
+            $this->makeCancelPendingTransferAction(),
             $this->makeExportStatementAction(),
         ];
     }
@@ -148,5 +153,38 @@ class ViewSharedCustomerStatement extends Page
     protected function getStatementMerchantName(): ?string
     {
         return $this->getStatementShare()?->team?->name;
+    }
+
+    protected function getTransferShare(): ?MerchantCustomerStatementShare
+    {
+        return $this->getStatementShare();
+    }
+
+    protected function getTransferCustomer(): ?MerchantCustomer
+    {
+        return $this->getSharedCustomer();
+    }
+
+    protected function getTransferTeamId(): ?int
+    {
+        return $this->getStatementTeamId();
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Collection<int, MerchantCustomerFinancialTransfer>
+     */
+    public function getFinancialTransfers()
+    {
+        $share = $this->getStatementShare();
+
+        if ($share === null) {
+            return collect();
+        }
+
+        return MerchantCustomerFinancialTransfer::acrossTeams()
+            ->where('statement_share_id', $share->id)
+            ->with(['paymentAccount', 'reviewer'])
+            ->latest()
+            ->get();
     }
 }

@@ -84,7 +84,7 @@ class PaymentDetailsSchema
     /**
      * @return array<int|string, string>
      */
-    public static function accountOptions(?string $method): array
+    public static function accountOptions(?string $method, ?int $teamId = null): array
     {
         if (! self::requiresAccount($method)) {
             return [];
@@ -94,7 +94,11 @@ class PaymentDetailsSchema
             ? MerchantPaymentAccountType::BANK
             : MerchantPaymentAccountType::CARD;
 
-        return MerchantPaymentAccount::query()
+        $query = $teamId !== null
+            ? MerchantPaymentAccount::withoutGlobalScopes()->where('team_id', $teamId)
+            : MerchantPaymentAccount::query();
+
+        return $query
             ->where('is_active', true)
             ->where('type', $type)
             ->orderBy('name')
@@ -103,5 +107,45 @@ class PaymentDetailsSchema
                 $account->id => $account->displayLabel(),
             ])
             ->all();
+    }
+
+    public static function accountSelectForTeam(
+        int $teamId,
+        string $methodField = 'payment_method',
+        string $accountField = 'merchant_payment_account_id',
+    ): Select {
+        return Select::make($accountField)
+            ->label(fn (Get $get): string => match ($get($methodField)) {
+                'bank_transfer' => 'البنك',
+                'card' => 'البطاقة / المحفظة',
+                default => 'الحساب',
+            })
+            ->options(fn (Get $get): array => self::accountOptions($get($methodField), $teamId))
+            ->searchable()
+            ->preload()
+            ->live()
+            ->visible(fn (Get $get): bool => self::requiresAccount($get($methodField)))
+            ->required(fn (Get $get): bool => self::requiresAccount($get($methodField)));
+    }
+
+    public static function accountPreviewForTeam(
+        int $teamId,
+        string $methodField = 'payment_method',
+        string $accountField = 'merchant_payment_account_id',
+    ): Placeholder {
+        return Placeholder::make('payment_account_preview')
+            ->label('تفاصيل الحساب')
+            ->visible(fn (Get $get): bool => self::requiresAccount($get($methodField)) && filled($get($accountField)))
+            ->content(function (Get $get) use ($accountField, $teamId): string {
+                $account = MerchantPaymentAccount::withoutGlobalScopes()
+                    ->where('team_id', $teamId)
+                    ->find($get($accountField));
+
+                if (! $account) {
+                    return '—';
+                }
+
+                return "{$account->name}\n{$account->account_number}";
+            });
     }
 }

@@ -56,6 +56,11 @@ class MerchantCustomerStatementShare extends Model
         return $this->is_active;
     }
 
+    public function financialTransfers(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(MerchantCustomerFinancialTransfer::class, 'statement_share_id');
+    }
+
     protected static function booted(): void
     {
         static::creating(function (self $share): void {

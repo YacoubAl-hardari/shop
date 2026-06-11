@@ -21,6 +21,38 @@
             </div>
         </div>
 
+        @php $transfers = $this->getCustomerFinancialTransfers(); @endphp
+
+        @if ($transfers->isNotEmpty())
+            <div class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
+                <div class="border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+                    <h3 class="font-semibold">التحويلات المالية (كشف الحساب)</h3>
+                </div>
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50 dark:bg-gray-800">
+                        <tr>
+                            <th class="px-4 py-3 text-right">التاريخ</th>
+                            <th class="px-4 py-3 text-right">الغرض</th>
+                            <th class="px-4 py-3 text-right">المبلغ</th>
+                            <th class="px-4 py-3 text-right">الحالة</th>
+                            <th class="px-4 py-3 text-right">مقدّم الطلب</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($transfers as $transfer)
+                            <tr class="border-t border-gray-100 dark:border-gray-800">
+                                <td class="px-4 py-3">{{ $transfer->created_at->format('Y-m-d H:i') }}</td>
+                                <td class="px-4 py-3">{{ $transfer->purpose->getLabel() }}</td>
+                                <td class="px-4 py-3">{{ number_format($transfer->amount, 2) }} ر.س</td>
+                                <td class="px-4 py-3">{{ $transfer->status->getLabel() }}</td>
+                                <td class="px-4 py-3">{{ $transfer->submitter?->name ?? '—' }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+
         @include('filament.pages.partials.customer-statement-filters')
 
         <div class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">

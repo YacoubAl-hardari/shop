@@ -9,6 +9,7 @@ use App\Models\BudgetCategory;
 use App\Models\JournalEntry;
 use App\Models\MerchantCategory;
 use App\Models\MerchantCustomer;
+use App\Models\MerchantCustomerFinancialTransfer;
 use App\Models\MerchantCustomerPayment;
 use App\Models\MerchantPaymentAccount;
 use App\Models\MerchantProduct;
@@ -49,6 +50,7 @@ class ApplyTenantScopes
             Account::class,
             JournalEntry::class,
             MerchantCustomer::class,
+            MerchantCustomerFinancialTransfer::class,
             MerchantCustomerPayment::class,
             MerchantPaymentAccount::class,
             MerchantProduct::class,

@@ -137,14 +137,16 @@ class PosSaleService
         ?int $merchantPaymentAccountId = null,
         ?string $referenceNumber = null,
         ?string $notes = null,
+        ?int $receivedBy = null,
+        bool $prepaidOnly = false,
     ): MerchantCustomerPayment {
         if ($amount <= 0) {
             throw new \InvalidArgumentException('مبلغ السداد يجب أن يكون أكبر من صفر');
         }
 
-        return DB::transaction(function () use ($team, $customer, $amount, $paymentMethod, $merchantPaymentAccountId, $referenceNumber, $notes) {
+        return DB::transaction(function () use ($team, $customer, $amount, $paymentMethod, $merchantPaymentAccountId, $referenceNumber, $notes, $receivedBy, $prepaidOnly) {
             $debt = (float) $customer->balance;
-            $appliedToBalance = min($amount, $debt);
+            $appliedToBalance = $prepaidOnly ? 0 : min($amount, $debt);
             $surplusToCredit = $amount - $appliedToBalance;
 
             $payment = MerchantCustomerPayment::create([
@@ -157,7 +159,7 @@ class PosSaleService
                 'surplus_to_credit' => $surplusToCredit,
                 'reference_number' => $referenceNumber,
                 'notes' => $notes,
-                'received_by' => Auth::id(),
+                'received_by' => $receivedBy ?? Auth::id(),
             ]);
 
             $description = 'تحصيل من العميل';
