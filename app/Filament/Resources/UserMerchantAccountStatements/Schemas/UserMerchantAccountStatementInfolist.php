@@ -35,7 +35,7 @@ class UserMerchantAccountStatementInfolist
                         TextEntry::make('transaction_type')
                             ->label('نوع المعاملة')
                             ->badge()
-                            ->color(fn (string $state): string => match ($state) {
+                            ->color(fn ($state): string => match ($state instanceof \BackedEnum ? $state->value : $state) {
                                 'order' => 'primary',
                                 'payment' => 'success',
                                 'refund' => 'warning',

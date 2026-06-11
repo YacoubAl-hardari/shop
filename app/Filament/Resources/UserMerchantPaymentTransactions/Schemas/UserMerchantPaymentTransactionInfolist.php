@@ -33,7 +33,8 @@ class UserMerchantPaymentTransactionInfolist
                         TextEntry::make('payment_method')
                             ->label('طريقة الدفع')
                             ->badge()
-                            ->color(fn (string $state): string => match ($state) {
+                            ->formatStateUsing(fn ($state) => $state instanceof \App\Enums\PaymentMethod ? $state->getLabel() : $state)
+                            ->color(fn ($state): string => match ($state instanceof \BackedEnum ? $state->value : $state) {
                                 'bank_transfer' => 'primary',
                                 'cash' => 'success',
                                 'check' => 'warning',
@@ -45,7 +46,8 @@ class UserMerchantPaymentTransactionInfolist
                         TextEntry::make('status')
                             ->label('الحالة')
                             ->badge()
-                            ->color(fn (string $state): string => match ($state) {
+                            ->formatStateUsing(fn ($state) => $state instanceof \App\Enums\PaymentTransactionStatus ? $state->getLabel() : $state)
+                            ->color(fn ($state): string => match ($state instanceof \BackedEnum ? $state->value : $state) {
                                 'pending' => 'warning',
                                 'completed' => 'success',
                                 'failed' => 'danger',

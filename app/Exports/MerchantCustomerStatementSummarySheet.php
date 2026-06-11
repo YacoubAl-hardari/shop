@@ -26,8 +26,8 @@ class MerchantCustomerStatementSummarySheet implements FromCollection, WithTitle
             ['العميل', $this->customer->name],
             ['الهاتف', $this->customer->phone ?? '—'],
             ['البريد', $this->customer->email ?? '—'],
-            ['المديونية', number_format((float) $this->customer->balance, 2).' ر.س'],
-            ['الرصيد الفائض', number_format((float) $this->customer->credit_balance, 2).' ر.س'],
+            ['المديونية', number_format((float) $this->customer->balance, 2).' '.\App\Helpers\CurrencyHelper::getSymbol($this->customer->team?->currency)],
+            ['الرصيد الفائض', number_format((float) $this->customer->credit_balance, 2).' '.\App\Helpers\CurrencyHelper::getSymbol($this->customer->team?->currency)],
         ]);
 
         if ($this->merchantName) {

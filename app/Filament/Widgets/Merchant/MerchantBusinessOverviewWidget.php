@@ -55,12 +55,12 @@ class MerchantBusinessOverviewWidget extends BaseWidget
             ->sum('credit_balance');
 
         return [
-            Stat::make('مبيعات اليوم', number_format($todaySales, 2).' ر.س')
+            Stat::make('مبيعات اليوم', number_format($todaySales, 2).' '.\App\Helpers\CurrencyHelper::getSymbol())
                 ->description('إجمالي مبيعات نقطة البيع اليوم')
                 ->descriptionIcon('heroicon-o-banknotes')
                 ->color('success'),
 
-            Stat::make('مبيعات الشهر', number_format($monthSales, 2).' ر.س')
+            Stat::make('مبيعات الشهر', number_format($monthSales, 2).' '.\App\Helpers\CurrencyHelper::getSymbol())
                 ->description("{$salesCount} عملية بيع هذا الشهر")
                 ->descriptionIcon('heroicon-o-shopping-cart')
                 ->color('primary'),
@@ -75,12 +75,12 @@ class MerchantBusinessOverviewWidget extends BaseWidget
                 ->descriptionIcon('heroicon-o-cube')
                 ->color('warning'),
 
-            Stat::make('مديونية العملاء', number_format($totalDebt, 2).' ر.س')
+            Stat::make('مديونية العملاء', number_format($totalDebt, 2).' '.\App\Helpers\CurrencyHelper::getSymbol())
                 ->description('إجمالي الذمم المدينة')
                 ->descriptionIcon('heroicon-o-exclamation-triangle')
                 ->color($totalDebt > 0 ? 'danger' : 'success'),
 
-            Stat::make('أرصدة العملاء الفائضة', number_format($totalPrepaid, 2).' ر.س')
+            Stat::make('أرصدة العملاء الفائضة', number_format($totalPrepaid, 2).' '.\App\Helpers\CurrencyHelper::getSymbol())
                 ->description('دفعات مقدمة قابلة للخصم')
                 ->descriptionIcon('heroicon-o-wallet')
                 ->color('gray'),

@@ -53,7 +53,7 @@ class MerchantSalesComparisonWidget extends ApexChartWidget
             ],
             'series' => [
                 [
-                    'name' => 'إجمالي المبيعات (ريال)',
+                    'name' => 'إجمالي المبيعات (' . \App\Helpers\CurrencyHelper::getSymbol() . ')',
                     'data' => $totalSales,
                 ],
                 [
@@ -76,7 +76,7 @@ class MerchantSalesComparisonWidget extends ApexChartWidget
                         'style' => [
                             'fontFamily' => 'inherit',
                         ],
-                        'formatter' => 'function(value) { return value + " ريال"; }',
+                        'formatter' => 'function(value) { return value + " " + ' . json_encode(\App\Helpers\CurrencyHelper::getSymbol()) . '; }',
                     ],
                 ],
                 [

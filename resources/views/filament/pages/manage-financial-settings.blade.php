@@ -97,7 +97,7 @@
                                 </div>
                                 <div class="text-2xl font-bold">
                                     {{ number_format($user->salary, 0) }}
-                                    <span class="text-base font-normal opacity-90">ريال</span>
+                                    <span class="text-base font-normal opacity-90">{{ \App\Helpers\CurrencyHelper::getSymbol($user->currency) }}</span>
                                 </div>
                                 <div class="text-sm font-medium opacity-90">
                                     راتبك الشهري
@@ -118,7 +118,7 @@
                                 </div>
                                 <div class="text-2xl font-bold">
                                     {{ number_format($totalDebt, 0) }}
-                                    <span class="text-base font-normal opacity-90">ريال</span>
+                                    <span class="text-base font-normal opacity-90">{{ \App\Helpers\CurrencyHelper::getSymbol($user->currency) }}</span>
                                 </div>
                                 <div class="text-sm font-medium opacity-90">
                                     إجمالي الديون
@@ -139,7 +139,7 @@
                                 </div>
                                 <div class="text-2xl font-bold">
                                     {{ number_format(max(0, $remainingAmount), 0) }}
-                                    <span class="text-base font-normal opacity-90">ريال</span>
+                                    <span class="text-base font-normal opacity-90">{{ \App\Helpers\CurrencyHelper::getSymbol($user->currency) }}</span>
                                 </div>
                                 <div class="text-sm font-medium opacity-90">
                                     المبلغ المتبقي
@@ -248,7 +248,7 @@
                                         </div>
                                         <div class="flex-1">
                                             <div class="text-base font-semibold text-gray-900 dark:text-white">
-                                                {{ number_format($user->max_debt_limit, 0) }} ريال
+                                                {{ number_format($user->max_debt_limit, 0) }} {{ \App\Helpers\CurrencyHelper::getSymbol($user->currency) }}
                                             </div>
                                             <div class="text-xs text-gray-600 dark:text-gray-400">
                                                 الحد الأقصى للديون
@@ -272,7 +272,7 @@
                                         </div>
                                         <div class="flex-1">
                                             <div class="text-base font-semibold text-gray-900 dark:text-white">
-                                                {{ number_format($user->min_spending_limit, 0) }} ريال
+                                                {{ number_format($user->min_spending_limit, 0) }} {{ \App\Helpers\CurrencyHelper::getSymbol($user->currency) }}
                                             </div>
                                             <div class="text-xs text-gray-600 dark:text-gray-400">
                                                 الحد الأدنى للمشتريات
@@ -296,7 +296,7 @@
                                         </div>
                                         <div class="flex-1">
                                             <div class="text-base font-semibold text-gray-900 dark:text-white">
-                                                {{ number_format($user->max_spending_limit, 0) }} ريال
+                                                {{ number_format($user->max_spending_limit, 0) }} {{ \App\Helpers\CurrencyHelper::getSymbol($user->currency) }}
                                             </div>
                                             <div class="text-xs text-gray-600 dark:text-gray-400">
                                                 الحد الأقصى للمشتريات

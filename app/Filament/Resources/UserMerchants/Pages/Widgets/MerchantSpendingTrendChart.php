@@ -70,7 +70,7 @@ class MerchantSpendingTrendChart extends ApexChartWidget
             ],
             'series' => [
                 [
-                    'name' => 'إجمالي المشتريات (ريال)',
+                    'name' => 'إجمالي المشتريات (' . \App\Helpers\CurrencyHelper::getSymbol() . ')',
                     'type' => 'column',
                     'data' => $spendingData,
                 ],
@@ -92,7 +92,7 @@ class MerchantSpendingTrendChart extends ApexChartWidget
             'yaxis' => [
                 [
                     'title' => [
-                        'text' => 'المبلغ (ريال)',
+                        'text' => 'المبلغ (' . \App\Helpers\CurrencyHelper::getSymbol() . ')',
                     ],
                     'labels' => [
                         'style' => [

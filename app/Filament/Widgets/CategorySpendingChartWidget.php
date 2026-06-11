@@ -37,7 +37,7 @@ class CategorySpendingChartWidget extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'الإنفاق (ريال)',
+                    'label' => 'الإنفاق (' . \App\Helpers\CurrencyHelper::getSymbol() . ')',
                     'data' => $categories->pluck('spent_amount')->toArray(),
                     'backgroundColor' => $categories->pluck('color')->toArray(),
                 ]

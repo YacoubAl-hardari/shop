@@ -64,10 +64,13 @@ class BudgetService
                 BudgetAlertType::EXCEEDED,
                 '🚨 تجاوزت ميزانيتك!',
                 sprintf(
-                    'صرفت %.2f ريال من ميزانية %.2f ريال. تجاوزت الحد بـ %.2f ريال!',
+                    'صرفت %.2f %s من ميزانية %.2f %s. تجاوزت الحد بـ %.2f %s!',
                     $budget->spent_amount,
+                    \App\Helpers\CurrencyHelper::getSymbol(User::find($budget->user_id)?->currency),
                     $budget->total_limit,
-                    $budget->spent_amount - $budget->total_limit
+                    \App\Helpers\CurrencyHelper::getSymbol(User::find($budget->user_id)?->currency),
+                    $budget->spent_amount - $budget->total_limit,
+                    \App\Helpers\CurrencyHelper::getSymbol(User::find($budget->user_id)?->currency)
                 ),
                 $percentage,
                 $budget->spent_amount
@@ -76,7 +79,7 @@ class BudgetService
             Notification::make()
                 ->danger()
                 ->title('🚨 تجاوزت ميزانيتك!')
-                ->body(sprintf('تجاوزت ميزانية "%s" بمبلغ %.2f ريال', $budget->name, $budget->spent_amount - $budget->total_limit))
+                ->body(sprintf('تجاوزت ميزانية "%s" بمبلغ %.2f %s', $budget->name, $budget->spent_amount - $budget->total_limit, \App\Helpers\CurrencyHelper::getSymbol(User::find($budget->user_id)?->currency)))
                 ->persistent()
                 ->send();
         }
@@ -89,11 +92,13 @@ class BudgetService
                 BudgetAlertType::WARNING,
                 '⚠️ اقتربت من نهاية ميزانيتك',
                 sprintf(
-                    'صرفت %.1f%% من ميزانيتك (%.2f من %.2f ريال). تبقى لك %.2f ريال فقط.',
+                    'صرفت %.1f%% من ميزانيتك (%.2f من %.2f %s). تبقى لك %.2f %s فقط.',
                     $percentage,
                     $budget->spent_amount,
                     $budget->total_limit,
-                    $budget->remaining_amount
+                    \App\Helpers\CurrencyHelper::getSymbol(User::find($budget->user_id)?->currency),
+                    $budget->remaining_amount,
+                    \App\Helpers\CurrencyHelper::getSymbol(User::find($budget->user_id)?->currency)
                 ),
                 $percentage,
                 $budget->spent_amount
@@ -123,10 +128,12 @@ class BudgetService
                 BudgetAlertType::EXCEEDED,
                 '🚨 تجاوزت ميزانية الفئة!',
                 sprintf(
-                    'صرفت %.2f ريال من ميزانية فئة "%s" (الحد: %.2f ريال)',
+                    'صرفت %.2f %s من ميزانية فئة "%s" (الحد: %.2f %s)',
                     $category->spent_amount,
+                    \App\Helpers\CurrencyHelper::getSymbol(User::find($category->user_id)?->currency),
                     $category->name,
-                    $category->budget_limit
+                    $category->budget_limit,
+                    \App\Helpers\CurrencyHelper::getSymbol(User::find($category->user_id)?->currency)
                 ),
                 $percentage,
                 $category->spent_amount
@@ -147,11 +154,12 @@ class BudgetService
                 BudgetAlertType::WARNING,
                 '⚠️ اقتربت من نهاية ميزانية الفئة',
                 sprintf(
-                    'صرفت %.1f%% من ميزانية فئة "%s" (%.2f من %.2f ريال)',
+                    'صرفت %.1f%% من ميزانية فئة "%s" (%.2f من %.2f %s)',
                     $percentage,
                     $category->name,
                     $category->spent_amount,
-                    $category->budget_limit
+                    $category->budget_limit,
+                    \App\Helpers\CurrencyHelper::getSymbol(User::find($category->user_id)?->currency)
                 ),
                 $percentage,
                 $category->spent_amount
@@ -207,9 +215,11 @@ class BudgetService
                 'status' => 'over_budget',
                 'can_proceed' => true, // يمكن المتابعة ولكن مع تحذير
                 'message' => sprintf(
-                    'هذه العملية ستتجاوز ميزانيتك! الحد: %.2f ريال، المتوقع بعد العملية: %.2f ريال',
+                    'هذه العملية ستتجاوز ميزانيتك! الحد: %.2f %s، المتوقع بعد العملية: %.2f %s',
                     $budget->total_limit,
-                    $newTotal
+                    \App\Helpers\CurrencyHelper::getSymbol($user->currency),
+                    $newTotal,
+                    \App\Helpers\CurrencyHelper::getSymbol($user->currency)
                 ),
                 'budget' => $budget,
                 'new_total' => $newTotal,

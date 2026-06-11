@@ -113,7 +113,7 @@ class MerchantDebtChart extends ApexChartWidget
             ],
             'yaxis' => [
                 'title' => [
-                    'text' => 'المبلغ (ريال)',
+                    'text' => 'المبلغ (' . \App\Helpers\CurrencyHelper::getSymbol() . ')',
                 ],
                 'labels' => [
                     'style' => [
@@ -130,7 +130,7 @@ class MerchantDebtChart extends ApexChartWidget
             ],
             'tooltip' => [
                 'y' => [
-                    'formatter' => 'function(val) { return val.toFixed(2) + " ريال"; }',
+                    'formatter' => 'function(val) { return val.toFixed(2) + " " + "' . \App\Helpers\CurrencyHelper::getSymbol() . '"; }',
                 ],
             ],
             'fill' => [

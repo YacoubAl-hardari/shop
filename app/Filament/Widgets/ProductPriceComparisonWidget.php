@@ -82,7 +82,7 @@ class ProductPriceComparisonWidget extends ApexChartWidget
                     'style' => [
                         'fontFamily' => 'inherit',
                     ],
-                    'formatter' => 'function(value) { return value + " ريال"; }',
+                    'formatter' => 'function(value) { return value + " " + ' . json_encode(\App\Helpers\CurrencyHelper::getSymbol()) . '; }',
                 ],
             ],
             'colors' => ['#10b981', '#f59e0b', '#ef4444'],

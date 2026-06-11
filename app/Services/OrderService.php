@@ -121,9 +121,11 @@ class OrderService
                 ->warning()
                 ->title('تحذير: تجاوز حد المشتريات')
                 ->body(sprintf(
-                    'قيمة الطلب (%.2f ريال) تجاوزت الحد الأقصى المسموح (%.2f ريال)',
+                    'قيمة الطلب (%.2f %s) تجاوزت الحد الأقصى المسموح (%.2f %s)',
                     $order->total_price,
-                    $user->max_spending_limit
+                    \App\Helpers\CurrencyHelper::getSymbol($user->currency),
+                    $user->max_spending_limit,
+                    \App\Helpers\CurrencyHelper::getSymbol($user->currency)
                 ))
                 ->persistent()
                 ->icon('heroicon-o-exclamation-triangle')
@@ -135,9 +137,11 @@ class OrderService
                 ->info()
                 ->title('معلومة: أقل من الحد الأدنى')
                 ->body(sprintf(
-                    'قيمة الطلب (%.2f ريال) أقل من الحد الأدنى المحدد (%.2f ريال)',
+                    'قيمة الطلب (%.2f %s) أقل من الحد الأدنى المحدد (%.2f %s)',
                     $order->total_price,
-                    $user->min_spending_limit
+                    \App\Helpers\CurrencyHelper::getSymbol($user->currency),
+                    $user->min_spending_limit,
+                    \App\Helpers\CurrencyHelper::getSymbol($user->currency)
                 ))
                 ->persistent()
                 ->icon('heroicon-o-information-circle')
@@ -150,10 +154,12 @@ class OrderService
                 ->danger()
                 ->title('تحذير: تجاوز حد الديون!')
                 ->body(sprintf(
-                    'إجمالي ديونك لدى %s (%.2f ريال) تجاوز الحد الأقصى المسموح (%.2f ريال)',
+                    'إجمالي ديونك لدى %s (%.2f %s) تجاوز الحد الأقصى المسموح (%.2f %s)',
                     $merchant->name,
                     $newDebt,
-                    $user->max_debt_limit
+                    \App\Helpers\CurrencyHelper::getSymbol($user->currency),
+                    $user->max_debt_limit,
+                    \App\Helpers\CurrencyHelper::getSymbol($user->currency)
                 ))
                 ->persistent()
                 ->icon('heroicon-o-exclamation-circle')
@@ -170,11 +176,12 @@ class OrderService
                 ->danger()
                 ->title('خطر: نسبة الديون مرتفعة جداً!')
                 ->body(sprintf(
-                    'ديونك لدى %s وصلت إلى %.1f%% من راتبك (%.2f من %.2f ريال). يُنصح بشدة تقليل المشتريات!',
+                    'ديونك لدى %s وصلت إلى %.1f%% من راتبك (%.2f من %.2f %s). يُنصح بشدة تقليل المشتريات!',
                     $merchant->name,
                     $debtRatio,
                     $newDebt,
-                    $user->salary
+                    $user->salary,
+                    \App\Helpers\CurrencyHelper::getSymbol($user->currency)
                 ))
                 ->persistent()
                 ->icon('heroicon-o-shield-exclamation')
@@ -185,11 +192,12 @@ class OrderService
                 ->warning()
                 ->title('تنبيه: نسبة الديون في منطقة الحذر')
                 ->body(sprintf(
-                    'ديونك لدى %s وصلت إلى %.1f%% من راتبك (%.2f من %.2f ريال). راقب مشترياتك بعناية.',
+                    'ديونك لدى %s وصلت إلى %.1f%% من راتبك (%.2f من %.2f %s). راقب مشترياتك بعناية.',
                     $merchant->name,
                     $debtRatio,
                     $newDebt,
-                    $user->salary
+                    $user->salary,
+                    \App\Helpers\CurrencyHelper::getSymbol($user->currency)
                 ))
                 ->persistent()
                 ->icon('heroicon-o-exclamation-triangle')

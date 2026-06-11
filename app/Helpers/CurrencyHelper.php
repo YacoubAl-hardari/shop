@@ -92,7 +92,11 @@ class CurrencyHelper
         }
 
         try {
-            if (Filament::getTenant()) {
+            $tenant = Filament::getTenant();
+            if ($tenant) {
+                if (str_starts_with($tenant->slug, 'personal-')) {
+                    return self::getClientCurrency();
+                }
                 return self::getMerchantCurrency();
             }
         } catch (\Throwable $e) {}

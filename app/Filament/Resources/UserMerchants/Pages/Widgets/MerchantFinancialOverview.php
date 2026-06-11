@@ -62,23 +62,23 @@ class MerchantFinancialOverview extends BaseWidget
         }
 
         return [
-            Stat::make('إجمالي القروض/المشتريات', number_format($totalPurchases, 2) . ' ريال')
+            Stat::make('إجمالي القروض/المشتريات', number_format($totalPurchases, 2) . ' ' . \App\Helpers\CurrencyHelper::getSymbol())
                 ->description("عدد السجلات: {$ordersCount} | مجموع ما استلمته من التاجر")
                 ->descriptionIcon('heroicon-o-shopping-cart')
                 ->color('info'),
 
-            Stat::make('إجمالي المدفوعات', number_format($totalPayments, 2) . ' ريال')
+            Stat::make('إجمالي المدفوعات', number_format($totalPayments, 2) . ' ' . \App\Helpers\CurrencyHelper::getSymbol())
                 ->description("عدد الدفعات: {$paymentsCount} | مجموع ما دفعته للتاجر")
                 ->descriptionIcon('heroicon-o-banknotes')
                 ->color('success'),
 
-            Stat::make('الديون الحالية', number_format($currentDebt, 2) . ' ريال')
-                ->description($user->salary ? sprintf('%.1f%% من الراتب | رصيد التاجر: %s', $debtRatio, number_format($merchant->balance, 2)) : 'رصيد التاجر: ' . number_format($merchant->balance, 2))
+            Stat::make('الديون الحالية', number_format($currentDebt, 2) . ' ' . \App\Helpers\CurrencyHelper::getSymbol())
+                ->description($user->salary ? sprintf('%.1f%% من الراتب | رصيد التاجر: %s', $debtRatio, number_format($merchant->balance, 2) . ' ' . \App\Helpers\CurrencyHelper::getSymbol()) : 'رصيد التاجر: ' . number_format($merchant->balance, 2) . ' ' . \App\Helpers\CurrencyHelper::getSymbol())
                 ->descriptionIcon('heroicon-o-exclamation-triangle')
                 ->color($riskColor),
 
             Stat::make('مستوى الخطر', $riskLevel)
-                ->description($user->salary ? 'بناءً على راتبك: ' . number_format($user->salary, 2) . ' ريال' : 'يرجى تحديد راتبك للمراقبة')
+                ->description($user->salary ? 'بناءً على راتبك: ' . number_format($user->salary, 2) . ' ' . \App\Helpers\CurrencyHelper::getSymbol() : 'يرجى تحديد راتبك للمراقبة')
                 ->descriptionIcon('heroicon-o-shield-check')
                 ->color($riskColor),
         ];

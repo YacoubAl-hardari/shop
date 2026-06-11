@@ -26,7 +26,7 @@ class UserMerchantAccountEntryInfolist
                         TextEntry::make('entry_type')
                             ->label('نوع القيد')
                             ->badge()
-                            ->color(fn (string $state): string => match ($state) {
+                            ->color(fn ($state): string => match ($state instanceof \BackedEnum ? $state->value : $state) {
                                 'debit' => 'danger',
                                 'credit' => 'success',
                                 'adjustment' => 'warning',

@@ -141,9 +141,11 @@ class MerchantRiskGaugeChart extends ApexChartWidget
             ],
             'title' => [
                 'text' => sprintf(
-                    'الديون: %s ريال | الراتب: %s ريال',
+                    'الديون: %s %s | الراتب: %s %s',
                     number_format($currentDebt, 2),
-                    $salary > 0 ? number_format($salary, 2) : 'غير محدد'
+                    \App\Helpers\CurrencyHelper::getSymbol(),
+                    $salary > 0 ? number_format($salary, 2) : 'غير محدد',
+                    $salary > 0 ? \App\Helpers\CurrencyHelper::getSymbol() : ''
                 ),
                 'align' => 'center',
                 'style' => [

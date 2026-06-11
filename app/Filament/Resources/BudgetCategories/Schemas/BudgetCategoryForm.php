@@ -26,7 +26,8 @@ class BudgetCategoryForm
                             ->maxLength(255),
 
                         TextInput::make('budget_limit')
-                            ->label('حد الميزانية (ريال)')
+                            ->label(fn () => 'حد الميزانية (' . \App\Helpers\CurrencyHelper::getSymbol() . ')')
+                            ->prefix(fn () => \App\Helpers\CurrencyHelper::getSymbol())
                             ->required()
                             ->numeric()
                             ->step(0.01),

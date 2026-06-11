@@ -32,7 +32,7 @@ class BudgetOverviewWidget extends BaseWidget
         $daysRemaining = $activeBudget->end_date->diffInDays(now());
 
         return [
-            Stat::make('حد الميزانية', number_format($activeBudget->total_limit, 2) . ' ريال')
+            Stat::make('حد الميزانية', number_format($activeBudget->total_limit, 2) . ' ' . \App\Helpers\CurrencyHelper::getSymbol())
                 ->description($activeBudget->name)
                 ->descriptionIcon('heroicon-o-banknotes')
                 ->color('success')
@@ -42,7 +42,7 @@ class BudgetOverviewWidget extends BaseWidget
                     $activeBudget->remaining_amount,
                 ]),
 
-            Stat::make('المبلغ المصروف', number_format($activeBudget->spent_amount, 2) . ' ريال')
+            Stat::make('المبلغ المصروف', number_format($activeBudget->spent_amount, 2) . ' ' . \App\Helpers\CurrencyHelper::getSymbol())
                 ->description(
                     $percentage >= 100
                         ? '⚠️ تجاوزت الميزانية!'
@@ -60,7 +60,7 @@ class BudgetOverviewWidget extends BaseWidget
                 )
                 ->chart([0, $activeBudget->spent_amount]),
 
-            Stat::make('المبلغ المتبقي', number_format($activeBudget->remaining_amount, 2) . ' ريال')
+            Stat::make('المبلغ المتبقي', number_format($activeBudget->remaining_amount, 2) . ' ' . \App\Helpers\CurrencyHelper::getSymbol())
                 ->description($daysRemaining . ' يوم متبقي')
                 ->descriptionIcon('heroicon-o-calendar')
                 ->color($activeBudget->remaining_amount > 0 ? 'success' : 'danger')
@@ -72,7 +72,7 @@ class BudgetOverviewWidget extends BaseWidget
             Stat::make('نسبة الإنفاق', $percentage . '%')
                 ->description(
                     $percentage >= 100
-                        ? 'تجاوزت بـ ' . number_format($activeBudget->spent_amount - $activeBudget->total_limit, 2) . ' ريال'
+                        ? 'تجاوزت بـ ' . number_format($activeBudget->spent_amount - $activeBudget->total_limit, 2) . ' ' . \App\Helpers\CurrencyHelper::getSymbol()
                         : 'من أصل 100%'
                 )
                 ->descriptionIcon('heroicon-o-chart-bar')

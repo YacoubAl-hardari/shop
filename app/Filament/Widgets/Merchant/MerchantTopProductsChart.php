@@ -74,16 +74,17 @@ class MerchantTopProductsChart extends ApexChartWidget
 
     protected function extraJsOptions(): ?RawJs
     {
-        return RawJs::make(<<<'JS'
+        $symbol = \App\Helpers\CurrencyHelper::getSymbol();
+        return RawJs::make(<<<JS
         {
             tooltip: {
                 y: {
                     formatter: function (val) {
-                        return val.toFixed(2) + ' ر.س'
+                        return val.toFixed(2) + ' {$symbol}'
                     }
                 }
             }
         }
-        JS);
+JS);
     }
 }

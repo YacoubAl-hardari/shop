@@ -265,7 +265,7 @@ class CustomerFinancialTransferService
         $this->notifyMerchantRecipients(
             $transfer,
             title: 'طلب سداد من عميل',
-            body: "قدّم العميل «{$customer->name}» {$purposeLabel} بمبلغ {$amount} ر.س — بانتظار التأكيد.",
+            body: "قدّم العميل «{$customer->name}» {$purposeLabel} بمبلغ {$amount} " . \App\Helpers\CurrencyHelper::getSymbol($transfer->team?->currency) . " — بانتظار التأكيد.",
             icon: 'heroicon-o-banknotes',
             color: 'warning',
             withReviewAction: true,
@@ -283,7 +283,7 @@ class CustomerFinancialTransferService
         $this->notifyMerchantRecipients(
             $transfer,
             title: 'إلغاء طلب سداد',
-            body: "ألغى العميل «{$customerLabel}» طلب السداد بمبلغ {$amount} ر.س.",
+            body: "ألغى العميل «{$customerLabel}» طلب السداد بمبلغ {$amount} " . \App\Helpers\CurrencyHelper::getSymbol($transfer->team?->currency) . ".",
             icon: 'heroicon-o-x-circle',
             color: 'gray',
             withReviewAction: false,
@@ -376,7 +376,7 @@ class CustomerFinancialTransferService
         if ($approved) {
             Notification::make()
                 ->title('تم تأكيد استلام المبلغ')
-                ->body("أكّد التاجر «{$teamName}» استلام مبلغ {$amount} ر.س وتم تسجيله في كشف حسابك.")
+                ->body("أكّد التاجر «{$teamName}» استلام مبلغ {$amount} " . \App\Helpers\CurrencyHelper::getSymbol($transfer->team?->currency) . " وتم تسجيله في كشف حسابك.")
                 ->icon('heroicon-o-check-circle')
                 ->success()
                 ->sendToDatabase($customerUser, isEventDispatched: true);
@@ -384,7 +384,7 @@ class CustomerFinancialTransferService
             return;
         }
 
-        $body = "رفض التاجر «{$teamName}» عملية السداد بمبلغ {$amount} ر.س.";
+        $body = "رفض التاجر «{$teamName}» عملية السداد بمبلغ {$amount} " . \App\Helpers\CurrencyHelper::getSymbol($transfer->team?->currency) . ".";
 
         if ($transfer->rejection_reason) {
             $body .= ' السبب: '.$transfer->rejection_reason;

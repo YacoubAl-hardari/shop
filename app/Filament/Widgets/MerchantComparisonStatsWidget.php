@@ -100,7 +100,7 @@ class MerchantComparisonStatsWidget extends BaseWidget
                 ->descriptionIcon('heroicon-o-document-duplicate')
                 ->color('warning'),
                 
-            Stat::make('متوسط فرق السعر', number_format($avgPriceDifference, 2) . ' ريال')
+            Stat::make('متوسط فرق السعر', number_format($avgPriceDifference, 2) . ' ' . \App\Helpers\CurrencyHelper::getSymbol())
                 ->description('متوسط الفرق في الأسعار للمنتجات المتشابهة')
                 ->descriptionIcon('heroicon-o-currency-dollar')
                 ->color($avgPriceDifference > 0 ? 'danger' : 'success'),
