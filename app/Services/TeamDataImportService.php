@@ -3,20 +3,35 @@
 namespace App\Services;
 
 use App\Enums\AccountType;
+use App\Enums\CustomerFinancialTransferPurpose;
+use App\Enums\CustomerFinancialTransferStatus;
+use App\Enums\InventoryCountStatus;
 use App\Enums\JournalEntryStatus;
 use App\Enums\MerchantPaymentAccountType;
 use App\Enums\NormalBalance;
+use App\Enums\RefundMethod;
+use App\Enums\ReturnType;
 use App\Enums\SalePaymentType;
+use App\Enums\StockMovementType;
 use App\Models\Account;
 use App\Models\Distributor;
+use App\Models\FiscalYearClosing;
+use App\Models\InventoryCount;
+use App\Models\InventoryCountItem;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use App\Models\MerchantCustomer;
+use App\Models\MerchantCustomerFinancialTransfer;
 use App\Models\MerchantCustomerPayment;
+use App\Models\MerchantCustomerStatementShare;
 use App\Models\MerchantPaymentAccount;
 use App\Models\MerchantProduct;
+use App\Models\PosExchangeItem;
 use App\Models\PosSale;
 use App\Models\PosSaleItem;
+use App\Models\PosSaleReturn;
+use App\Models\PosSaleReturnItem;
+use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Models\Team;
 use App\Models\User;
@@ -51,7 +66,14 @@ class TeamDataImportService
             $accountMap = $this->importAccounts($team, $data['accounts'] ?? []);
             $saleMap = $this->importPosSales($team, $user, $data['pos_sales'] ?? [], $customerMap, $paymentAccountMap, $productMap);
             $paymentMap = $this->importCustomerPayments($team, $user, $data['merchant_customer_payments'] ?? [], $customerMap, $paymentAccountMap);
-            $this->importJournalEntries($team, $user, $data['journal_entries'] ?? [], $accountMap, $customerMap, $saleMap, $paymentMap);
+            $entryMap = $this->importJournalEntries($team, $user, $data['journal_entries'] ?? [], $accountMap, $customerMap, $saleMap, $paymentMap);
+
+            $shareMap = $this->importStatementShares($team, $data['merchant_customer_statement_shares'] ?? [], $customerMap);
+            $this->importFinancialTransfers($team, $data['merchant_customer_financial_transfers'] ?? [], $customerMap, $shareMap, $paymentAccountMap, $paymentMap);
+            $returnMap = $this->importSaleReturns($team, $data['pos_sale_returns'] ?? [], $saleMap, $productMap);
+            $inventoryCountMap = $this->importInventoryCounts($team, $data['inventory_counts'] ?? [], $entryMap, $productMap);
+            $this->importFiscalYearClosings($team, $data['fiscal_year_closings'] ?? [], $entryMap);
+            $this->importStockMovements($team, $data['stock_movements'] ?? [], $productMap, $entryMap, $saleMap, $returnMap, $inventoryCountMap);
 
             DB::commit();
             Log::info("Successfully imported data for team: {$team->id}");
@@ -385,6 +407,7 @@ class TeamDataImportService
      * @param  array<string, int>  $customerMap
      * @param  array<string, int>  $saleMap
      * @param  array<string, int>  $paymentMap
+     * @return array<string, int>
      */
     protected function importJournalEntries(
         Team $team,
@@ -394,7 +417,9 @@ class TeamDataImportService
         array $customerMap,
         array $saleMap,
         array $paymentMap,
-    ): void {
+    ): array {
+        $map = [];
+
         foreach ($entries as $row) {
             $reference = $this->resolveReferenceId($row['reference_key'] ?? null, $saleMap, $paymentMap);
 
@@ -423,7 +448,11 @@ class TeamDataImportService
                         : null,
                 ]);
             }
+
+            $map[$row['entry_number']] = $entry->id;
         }
+
+        return $map;
     }
 
     /**
@@ -478,5 +507,341 @@ class TeamDataImportService
     protected function paymentExportKey(?string $name, ?string $phone, float $amount, Carbon $createdAt): string
     {
         return 'customer_payment:'.$this->customerKey($name, $phone).':'.$amount.':'.$createdAt->timestamp;
+    }
+
+    protected function importStatementShares(Team $team, array $shares, array $customerMap): array
+    {
+        $map = [];
+
+        foreach ($shares as $row) {
+            $customerKey = $this->customerKey($row['customer_name'] ?? '', $row['customer_phone'] ?? null);
+            $customerId = $customerMap[$customerKey] ?? null;
+
+            if (!$customerId) {
+                continue;
+            }
+
+            $userId = $this->resolveUserByEmail($row['user_email'] ?? null);
+            $sharedBy = $this->resolveUserByEmail($row['shared_by_email'] ?? null);
+            $closedBy = $this->resolveUserByEmail($row['closed_by_email'] ?? null);
+
+            $share = MerchantCustomerStatementShare::create([
+                'uuid' => $row['uuid'],
+                'team_id' => $team->id,
+                'merchant_customer_id' => $customerId,
+                'user_id' => $userId,
+                'shared_by' => $sharedBy,
+                'closed_by' => $closedBy,
+                'is_active' => $row['is_active'] ?? true,
+                'shared_at' => isset($row['shared_at']) ? Carbon::parse($row['shared_at']) : null,
+                'closed_at' => isset($row['closed_at']) ? Carbon::parse($row['closed_at']) : null,
+                'created_at' => isset($row['created_at']) ? Carbon::parse($row['created_at']) : now(),
+            ]);
+
+            $map[$row['uuid']] = $share->id;
+        }
+
+        return $map;
+    }
+
+    protected function importFinancialTransfers(
+        Team $team,
+        array $transfers,
+        array $customerMap,
+        array $shareMap,
+        array $paymentAccountMap,
+        array $paymentMap
+    ): void {
+        foreach ($transfers as $row) {
+            $customerKey = $this->customerKey($row['customer_name'] ?? '', $row['customer_phone'] ?? null);
+            $customerId = $customerMap[$customerKey] ?? null;
+
+            if (!$customerId) {
+                continue;
+            }
+
+            $shareId = isset($row['statement_share_uuid']) ? ($shareMap[$row['statement_share_uuid']] ?? null) : null;
+            $submittedBy = $this->resolveUserByEmail($row['submitted_by_email'] ?? null) ?? User::first()?->id; // fallback
+            $paymentAccountId = isset($row['payment_account_name']) ? ($paymentAccountMap[$row['payment_account_name']] ?? null) : null;
+            $reviewedBy = $this->resolveUserByEmail($row['reviewed_by_email'] ?? null);
+
+            $paymentId = null;
+            if (!empty($row['merchant_customer_payment_key'])) {
+                $paymentId = $paymentMap[$row['merchant_customer_payment_key']] ?? null;
+            }
+
+            MerchantCustomerFinancialTransfer::create([
+                'team_id' => $team->id,
+                'merchant_customer_id' => $customerId,
+                'statement_share_id' => $shareId,
+                'submitted_by' => $submittedBy,
+                'merchant_payment_account_id' => $paymentAccountId,
+                'payment_method' => $row['payment_method'] ?? 'cash',
+                'purpose' => CustomerFinancialTransferPurpose::tryFrom($row['purpose'] ?? '') ?? $row['purpose'],
+                'amount' => $row['amount'] ?? 0,
+                'reference_number' => $row['reference_number'] ?? null,
+                'notes' => $row['notes'] ?? null,
+                'status' => CustomerFinancialTransferStatus::tryFrom($row['status'] ?? '') ?? $row['status'],
+                'reviewed_by' => $reviewedBy,
+                'reviewed_at' => isset($row['reviewed_at']) ? Carbon::parse($row['reviewed_at']) : null,
+                'rejection_reason' => $row['rejection_reason'] ?? null,
+                'merchant_customer_payment_id' => $paymentId,
+                'created_at' => isset($row['created_at']) ? Carbon::parse($row['created_at']) : now(),
+            ]);
+        }
+    }
+
+    protected function importSaleReturns(Team $team, array $returns, array $saleMap, array $productMap): array
+    {
+        $map = [];
+
+        foreach ($returns as $row) {
+            $saleId = isset($row['sale_number']) ? ($saleMap[$row['sale_number']] ?? null) : null;
+
+            if (!$saleId) {
+                continue;
+            }
+
+            $processedBy = $this->resolveUserByEmail($row['processed_by_email'] ?? null);
+
+            $return = PosSaleReturn::withoutGlobalScopes()->create([
+                'team_id' => $team->id,
+                'pos_sale_id' => $saleId,
+                'return_number' => $row['return_number'],
+                'return_type' => ReturnType::tryFrom($row['return_type'] ?? '') ?? $row['return_type'],
+                'refund_method' => RefundMethod::tryFrom($row['refund_method'] ?? '') ?? $row['refund_method'],
+                'returned_amount' => $row['returned_amount'] ?? 0,
+                'exchange_amount' => $row['exchange_amount'] ?? 0,
+                'price_difference' => $row['price_difference'] ?? 0,
+                'refunded_to_customer' => $row['refunded_to_customer'] ?? 0,
+                'receivable_reduction_amount' => $row['receivable_reduction_amount'] ?? 0,
+                'charged_to_customer' => $row['charged_to_customer'] ?? 0,
+                'credit_note_amount' => $row['credit_note_amount'] ?? 0,
+                'status' => $row['status'] ?? 'completed',
+                'notes' => $row['notes'] ?? null,
+                'processed_by' => $processedBy,
+                'created_at' => isset($row['created_at']) ? Carbon::parse($row['created_at']) : now(),
+            ]);
+
+            foreach ($row['items'] ?? [] as $itemRow) {
+                $productKey = $this->productKeyFromItem($itemRow);
+                $productId = $productMap[$productKey] ?? null;
+
+                // Resolve pos_sale_item_id under the original sale:
+                $posSaleItem = PosSaleItem::where('pos_sale_id', $saleId)
+                    ->whereHas('merchantProduct', function ($q) use ($itemRow) {
+                        $q->where('sku', $itemRow['product_sku'])
+                          ->orWhere('barcode', $itemRow['product_barcode'])
+                          ->orWhere('name', $itemRow['product_name']);
+                    })->first();
+
+                if (!$posSaleItem) {
+                    $posSaleItem = PosSaleItem::where('pos_sale_id', $saleId)
+                        ->where('product_name', $itemRow['product_name'])
+                        ->first();
+                }
+
+                PosSaleReturnItem::create([
+                    'pos_sale_return_id' => $return->id,
+                    'pos_sale_item_id' => $posSaleItem?->id,
+                    'merchant_product_id' => $productId,
+                    'product_name' => $itemRow['product_name'],
+                    'quantity_returned' => $itemRow['quantity_returned'] ?? 0,
+                    'unit_price' => $itemRow['unit_price'] ?? 0,
+                    'total_price' => $itemRow['total_price'] ?? 0,
+                    'unit_cost' => $itemRow['unit_cost'] ?? 0,
+                    'return_reason' => $itemRow['return_reason'] ?? null,
+                    'item_condition' => $itemRow['item_condition'] ?? null,
+                ]);
+            }
+
+            foreach ($row['exchange_items'] ?? [] as $exRow) {
+                $productKey = $this->productKeyFromItem([
+                    'product_sku' => $exRow['product_sku'],
+                    'product_barcode' => $exRow['product_barcode'],
+                    'product_name' => $exRow['product_name'],
+                ]);
+                $productId = $productMap[$productKey] ?? null;
+
+                PosExchangeItem::create([
+                    'pos_sale_return_id' => $return->id,
+                    'merchant_product_id' => $productId,
+                    'product_name' => $exRow['product_name'],
+                    'quantity' => $exRow['quantity'] ?? 0,
+                    'unit_price' => $exRow['unit_price'] ?? 0,
+                    'total_price' => $exRow['total_price'] ?? 0,
+                    'unit_cost' => $exRow['unit_cost'] ?? 0,
+                ]);
+            }
+
+            $map[$row['return_number']] = $return->id;
+        }
+
+        return $map;
+    }
+
+    protected function importInventoryCounts(Team $team, array $counts, array $entryMap, array $productMap): array
+    {
+        $map = [];
+
+        foreach ($counts as $row) {
+            $createdBy = $this->resolveUserByEmail($row['created_by_email'] ?? null);
+            $approvedBy = $this->resolveUserByEmail($row['approved_by_email'] ?? null);
+            $journalEntryId = isset($row['journal_entry_number']) ? ($entryMap[$row['journal_entry_number']] ?? null) : null;
+
+            $count = InventoryCount::withoutGlobalScopes()->create([
+                'team_id' => $team->id,
+                'count_number' => $row['count_number'],
+                'count_date' => isset($row['count_date']) ? Carbon::parse($row['count_date']) : now(),
+                'fiscal_year' => $row['fiscal_year'] ?? now()->year,
+                'status' => InventoryCountStatus::tryFrom($row['status'] ?? '') ?? $row['status'],
+                'total_book_value' => $row['total_book_value'] ?? 0,
+                'total_counted_value' => $row['total_counted_value'] ?? 0,
+                'variance_value' => $row['variance_value'] ?? 0,
+                'journal_entry_id' => $journalEntryId,
+                'notes' => $row['notes'] ?? null,
+                'created_by' => $createdBy,
+                'approved_by' => $approvedBy,
+                'approved_at' => isset($row['approved_at']) ? Carbon::parse($row['approved_at']) : null,
+                'created_at' => isset($row['created_at']) ? Carbon::parse($row['created_at']) : now(),
+            ]);
+
+            foreach ($row['items'] ?? [] as $itemRow) {
+                $productKey = $this->productKeyFromItem([
+                    'product_sku' => $itemRow['product_sku'],
+                    'product_barcode' => $itemRow['product_barcode'],
+                    'product_name' => $itemRow['product_name'],
+                ]);
+                $productId = $productMap[$productKey] ?? null;
+
+                if (!$productId) {
+                    continue;
+                }
+
+                InventoryCountItem::create([
+                    'inventory_count_id' => $count->id,
+                    'merchant_product_id' => $productId,
+                    'product_name' => $itemRow['product_name'],
+                    'unit' => $itemRow['unit'] ?? null,
+                    'book_quantity' => $itemRow['book_quantity'] ?? 0,
+                    'counted_quantity' => $itemRow['counted_quantity'],
+                    'variance_quantity' => $itemRow['variance_quantity'] ?? 0,
+                    'unit_cost' => $itemRow['unit_cost'] ?? 0,
+                    'book_value' => $itemRow['book_value'] ?? 0,
+                    'counted_value' => $itemRow['counted_value'] ?? 0,
+                    'variance_value' => $itemRow['variance_value'] ?? 0,
+                    'notes' => $itemRow['notes'] ?? null,
+                ]);
+            }
+
+            $map[$row['count_number']] = $count->id;
+        }
+
+        return $map;
+    }
+
+    protected function importFiscalYearClosings(Team $team, array $closings, array $entryMap): void
+    {
+        foreach ($closings as $row) {
+            $closedBy = $this->resolveUserByEmail($row['closed_by_email'] ?? null);
+            $journalEntryId = isset($row['journal_entry_number']) ? ($entryMap[$row['journal_entry_number']] ?? null) : null;
+
+            FiscalYearClosing::create([
+                'team_id' => $team->id,
+                'fiscal_year' => $row['fiscal_year'],
+                'closing_date' => isset($row['closing_date']) ? Carbon::parse($row['closing_date']) : now(),
+                'status' => $row['status'] ?? 'draft',
+                'total_revenue' => $row['total_revenue'] ?? 0,
+                'total_expense' => $row['total_expense'] ?? 0,
+                'net_income' => $row['net_income'] ?? 0,
+                'retained_earnings_before' => $row['retained_earnings_before'] ?? 0,
+                'retained_earnings_after' => $row['retained_earnings_after'] ?? 0,
+                'journal_entry_id' => $journalEntryId,
+                'notes' => $row['notes'] ?? null,
+                'closed_by' => $closedBy,
+                'posted_at' => isset($row['posted_at']) ? Carbon::parse($row['posted_at']) : null,
+                'created_at' => isset($row['created_at']) ? Carbon::parse($row['created_at']) : now(),
+            ]);
+        }
+    }
+
+    protected function importStockMovements(
+        Team $team,
+        array $movements,
+        array $productMap,
+        array $entryMap,
+        array $saleMap,
+        array $returnMap,
+        array $inventoryCountMap
+    ): void {
+        foreach ($movements as $row) {
+            $productKey = $this->productKeyFromItem([
+                'product_sku' => $row['product_sku'],
+                'product_barcode' => $row['product_barcode'],
+                'product_name' => $row['product_name'],
+            ]);
+            $productId = $productMap[$productKey] ?? null;
+
+            if (!$productId) {
+                continue;
+            }
+
+            $journalEntryId = isset($row['journal_entry_number']) ? ($entryMap[$row['journal_entry_number']] ?? null) : null;
+            $createdBy = $this->resolveUserByEmail($row['created_by_email'] ?? null);
+
+            $reference = $this->resolveStockMovementReference(
+                $row['reference_key'] ?? '',
+                $saleMap,
+                $returnMap,
+                $inventoryCountMap
+            );
+
+            StockMovement::withoutGlobalScopes()->create([
+                'team_id' => $team->id,
+                'merchant_product_id' => $productId,
+                'movement_type' => StockMovementType::tryFrom($row['movement_type'] ?? '') ?? $row['movement_type'],
+                'direction' => $row['direction'],
+                'quantity' => $row['quantity'] ?? 0,
+                'unit_cost' => $row['unit_cost'] ?? 0,
+                'total_cost' => $row['total_cost'] ?? 0,
+                'quantity_before' => $row['quantity_before'] ?? 0,
+                'quantity_after' => $row['quantity_after'] ?? 0,
+                'reference_type' => $reference['type'],
+                'reference_id' => $reference['id'],
+                'journal_entry_id' => $journalEntryId,
+                'notes' => $row['notes'] ?? null,
+                'created_by' => $createdBy,
+                'created_at' => isset($row['created_at']) ? Carbon::parse($row['created_at']) : now(),
+            ]);
+        }
+    }
+
+    protected function resolveStockMovementReference(
+        string $refKey,
+        array $saleMap,
+        array $returnMap,
+        array $inventoryCountMap
+    ): array {
+        if (str_starts_with($refKey, 'pos_sale:')) {
+            $saleNumber = substr($refKey, strlen('pos_sale:'));
+            return ['type' => PosSale::class, 'id' => $saleMap[$saleNumber] ?? null];
+        }
+        if (str_starts_with($refKey, 'pos_sale_return:')) {
+            $returnNumber = substr($refKey, strlen('pos_sale_return:'));
+            return ['type' => PosSaleReturn::class, 'id' => $returnMap[$returnNumber] ?? null];
+        }
+        if (str_starts_with($refKey, 'inventory_count:')) {
+            $countNumber = substr($refKey, strlen('inventory_count:'));
+            return ['type' => InventoryCount::class, 'id' => $inventoryCountMap[$countNumber] ?? null];
+        }
+        return ['type' => null, 'id' => null];
+    }
+
+    protected function resolveUserByEmail(?string $email): ?int
+    {
+        if (!$email) {
+            return null;
+        }
+        return User::where('email', $email)->first()?->id;
     }
 }

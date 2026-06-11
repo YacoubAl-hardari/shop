@@ -759,6 +759,8 @@ it('blocks receivable reduction when customer debt is insufficient', function ()
         'cash'
     );
 
+    $customer->update(['balance' => 0.00]);
+
     $saleItem = $sale->items->first();
 
     try {

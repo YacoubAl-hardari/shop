@@ -58,6 +58,10 @@ class PosReturnService
 
             $sale->loadMissing('merchantCustomer', 'returns');
 
+            if ($this->settlementService->remainingMerchandiseValue($sale) <= 0) {
+                throw new \InvalidArgumentException($this->settlementService->fullyReturnedMessage($sale));
+            }
+
             $saleLineIds = collect($returnItems)->pluck('pos_sale_item_id')->filter();
 
             if ($saleLineIds->unique()->count() !== $saleLineIds->count()) {
@@ -167,7 +171,7 @@ class PosReturnService
             }
 
             // ترحيل القيود المحاسبية
-            $this->postReturnJournalEntry($team, $saleReturn, $sale, $returnItems);
+            $this->postReturnJournalEntry($team, $saleReturn, $sale);
 
             // رصيد دائن للعميل إن اختار credit_note
             if ($refundMethod === RefundMethod::CREDIT_NOTE && $sale->merchantCustomer) {
@@ -384,12 +388,10 @@ class PosReturnService
 
     // ─── القيود المحاسبية — إرجاع ─────────────────────────────────────────────
 
-    protected function postReturnJournalEntry(Team $team, PosSaleReturn $saleReturn, PosSale $sale, array $returnItems): void
+    protected function postReturnJournalEntry(Team $team, PosSaleReturn $saleReturn, PosSale $sale): void
     {
+        $saleReturn->loadMissing('returnItems');
         $returnedAmount = (float) $saleReturn->returned_amount;
-        $totalReturnCost = collect($returnItems)->sum(
-            fn ($i) => (float) ($i['unit_cost'] ?? 0) * (float) $i['quantity_returned']
-        );
 
         $lines = [];
 
@@ -437,9 +439,9 @@ class PosReturnService
         );
 
         // عكس COGS: مدين 1201 / دائن 5001 (للأصناف القابلة لإعادة البيع)
-        $resellableCost = collect($returnItems)
-            ->filter(fn ($i) => ($i['item_condition'] ?? 'resellable') === 'resellable')
-            ->sum(fn ($i) => (float) ($i['unit_cost'] ?? 0) * (float) $i['quantity_returned']);
+        $resellableCost = $saleReturn->returnItems
+            ->filter(fn ($i) => ($i->item_condition ?? 'resellable') === 'resellable')
+            ->sum(fn ($i) => (float) ($i->unit_cost ?? 0) * (float) $i->quantity_returned);
 
         if ($resellableCost > 0) {
             $this->accountingService->post(
@@ -454,9 +456,9 @@ class PosReturnService
         }
 
         // إقفال تكلفة التالف كخسارة: مدين 1202 (فوارق وعجز المخزون) / دائن 5001 (تكلفة المبيعات)
-        $damagedCost = collect($returnItems)
-            ->filter(fn ($i) => ($i['item_condition'] ?? 'resellable') !== 'resellable')
-            ->sum(fn ($i) => (float) ($i['unit_cost'] ?? 0) * (float) $i['quantity_returned']);
+        $damagedCost = $saleReturn->returnItems
+            ->filter(fn ($i) => ($i->item_condition ?? 'resellable') !== 'resellable')
+            ->sum(fn ($i) => (float) ($i->unit_cost ?? 0) * (float) $i->quantity_returned);
 
         if ($damagedCost > 0) {
             $this->accountingService->post(

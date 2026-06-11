@@ -4,16 +4,26 @@ namespace App\Services;
 
 use App\Models\Account;
 use App\Models\Distributor;
+use App\Models\FiscalYearClosing;
+use App\Models\InventoryCount;
+use App\Models\InventoryCountItem;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use App\Models\MerchantCustomer;
+use App\Models\MerchantCustomerFinancialTransfer;
 use App\Models\MerchantCustomerPayment;
+use App\Models\MerchantCustomerStatementShare;
 use App\Models\MerchantPaymentAccount;
 use App\Models\MerchantProduct;
+use App\Models\PosExchangeItem;
 use App\Models\PosSale;
 use App\Models\PosSaleItem;
+use App\Models\PosSaleReturn;
+use App\Models\PosSaleReturnItem;
+use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Models\Team;
+use App\Models\User;
 use Illuminate\Support\Collection;
 
 class TeamDataExportService
@@ -42,6 +52,12 @@ class TeamDataExportService
             'pos_sales' => $this->exportPosSales($team),
             'merchant_customer_payments' => $this->exportCustomerPayments($team),
             'journal_entries' => $this->exportJournalEntries($team),
+            'merchant_customer_statement_shares' => $this->exportStatementShares($team),
+            'merchant_customer_financial_transfers' => $this->exportFinancialTransfers($team),
+            'pos_sale_returns' => $this->exportSaleReturns($team),
+            'inventory_counts' => $this->exportInventoryCounts($team),
+            'fiscal_year_closings' => $this->exportFiscalYearClosings($team),
+            'stock_movements' => $this->exportStockMovements($team),
         ];
 
         $data['signature'] = $this->generateSignature($data);
@@ -75,6 +91,20 @@ class TeamDataExportService
             ])],
             ['title' => 'شجرة الحسابات', 'headings' => ['الرمز', 'الاسم', 'النوع', 'الرصيد الطبيعي', 'الحساب الأب', 'نشط', 'نظامي'], 'rows' => collect($data['accounts'])->map(fn ($r) => [
                 $r['code'], $r['name'], $r['type'], $r['normal_balance'], $r['parent_code'], $r['is_active'] ? 'نعم' : 'لا', $r['is_system'] ? 'نعم' : 'لا',
+            ])],
+            ['title' => 'التحويلات المالية', 'headings' => ['العميل', 'رابط الكشف', 'مقدم بواسطة', 'الحساب المالي للتاجر', 'طريقة الدفع', 'الهدف', 'المبلغ', 'الرقم المرجعي', 'ملاحظات', 'الحالة', 'تمت المراجعة بواسطة', 'تاريخ المراجعة', 'سبب الرفض'], 'rows' => collect($data['merchant_customer_financial_transfers'])->map(fn ($r) => [
+                $r['customer_name'], $r['statement_share_uuid'], $r['submitted_by_email'], $r['payment_account_name'], $r['payment_method'], $r['purpose'], $r['amount'], $r['reference_number'], $r['notes'], $r['status'], $r['reviewed_by_email'], $r['reviewed_at'], $r['rejection_reason']
+            ])],
+            ['title' => 'المرتجعات والاستبدال', 'headings' => ['رقم الفاتورة الأصلية', 'رقم المرتجع', 'نوع العملية', 'طريقة الاسترداد', 'المبلغ المرتجع', 'مبلغ الاستبدال', 'فرق السعر', 'المسترد للعميل', 'المطلوب من العميل', 'رصيد العمولة/السند الدائن', 'الحالة', 'ملاحظات', 'تاريخ المعالجة'], 'rows' => collect($data['pos_sale_returns'])->map(fn ($r) => [
+                $r['sale_number'], $r['return_number'], $r['return_type'], $r['refund_method'], $r['returned_amount'], $r['exchange_amount'], $r['price_difference'], $r['refunded_to_customer'], $r['charged_to_customer'], $r['credit_note_amount'], $r['status'], $r['notes'], $r['created_at']
+            ])],
+            ['title' => 'تفاصيل المرتجع والاستبدال', 'headings' => ['رقم المرتجع', 'المنتج', 'الكمية المرجعة/المستبدلة', 'سعر الوحدة', 'السعر الإجمالي', 'التكلفة وقت العملية', 'السبب', 'حالة الصنف'], 'rows' => collect($data['pos_sale_returns'])->flatMap(fn ($ret) => collect($ret['items'])->map(fn ($item) => [
+                $ret['return_number'], $item['product_name'], $item['quantity_returned'], $item['unit_price'], $item['total_price'], $item['unit_cost'], $item['return_reason'], $item['item_condition']
+            ])->concat(collect($ret['exchange_items'])->map(fn ($item) => [
+                $ret['return_number'], $item['product_name'], $item['quantity'], $item['unit_price'], $item['total_price'], $item['unit_cost'], 'استبدال (مضاف للمخزون)', ''
+            ])))],
+            ['title' => 'الإغلاق السنوي', 'headings' => ['السنة المالية', 'تاريخ الإغلاق', 'الحالة', 'إجمالي الإيرادات', 'إجمالي المصاريف', 'صافي الدخل', 'الأرباح المحتجزة قبل', 'الأرباح المحتجزة بعد', 'رقم قيد اليومية', 'ملاحظات', 'أغلق بواسطة', 'تاريخ الترحيل'], 'rows' => collect($data['fiscal_year_closings'])->map(fn ($r) => [
+                $r['fiscal_year'], $r['closing_date'], $r['status'], $r['total_revenue'], $r['total_expense'], $r['net_income'], $r['retained_earnings_before'], $r['retained_earnings_after'], $r['journal_entry_number'], $r['notes'], $r['closed_by_email'], $r['posted_at']
             ])],
         ];
     }
@@ -125,6 +155,29 @@ class TeamDataExportService
             ]))],
             ['title' => 'سدادات العملاء', 'headings' => ['العميل', 'المبلغ', 'سُدّد من المديونية', 'أُضيف للرصيد', 'طريقة الدفع', 'المرجع', 'التاريخ'], 'rows' => collect($data['merchant_customer_payments'])->map(fn ($r) => [
                 $r['customer_name'], $r['amount'], $r['applied_to_balance'], $r['surplus_to_credit'], $r['payment_method'], $r['reference_number'], $r['created_at'],
+            ])],
+            ['title' => 'التحويلات المالية', 'headings' => ['العميل', 'رابط الكشف', 'مقدم بواسطة', 'الحساب المالي للتاجر', 'طريقة الدفع', 'الهدف', 'المبلغ', 'الرقم المرجعي', 'ملاحظات', 'الحالة', 'تمت المراجعة بواسطة', 'تاريخ المراجعة', 'سبب الرفض'], 'rows' => collect($data['merchant_customer_financial_transfers'])->map(fn ($r) => [
+                $r['customer_name'], $r['statement_share_uuid'], $r['submitted_by_email'], $r['payment_account_name'], $r['payment_method'], $r['purpose'], $r['amount'], $r['reference_number'], $r['notes'], $r['status'], $r['reviewed_by_email'], $r['reviewed_at'], $r['rejection_reason']
+            ])],
+            ['title' => 'المرتجعات والاستبدال', 'headings' => ['رقم الفاتورة الأصلية', 'رقم المرتجع', 'نوع العملية', 'طريقة الاسترداد', 'المبلغ المرتجع', 'مبلغ الاستبدال', 'فرق السعر', 'المسترد للعميل', 'المطلوب من العميل', 'رصيد العمولة/السند الدائن', 'الحالة', 'ملاحظات', 'تاريخ المعالجة'], 'rows' => collect($data['pos_sale_returns'])->map(fn ($r) => [
+                $r['sale_number'], $r['return_number'], $r['return_type'], $r['refund_method'], $r['returned_amount'], $r['exchange_amount'], $r['price_difference'], $r['refunded_to_customer'], $r['charged_to_customer'], $r['credit_note_amount'], $r['status'], $r['notes'], $r['created_at']
+            ])],
+            ['title' => 'تفاصيل المرتجع والاستبدال', 'headings' => ['رقم المرتجع', 'المنتج', 'الكمية المرجعة/المستبدلة', 'سعر الوحدة', 'السعر الإجمالي', 'التكلفة وقت العملية', 'السبب', 'حالة الصنف'], 'rows' => collect($data['pos_sale_returns'])->flatMap(fn ($ret) => collect($ret['items'])->map(fn ($item) => [
+                $ret['return_number'], $item['product_name'], $item['quantity_returned'], $item['unit_price'], $item['total_price'], $item['unit_cost'], $item['return_reason'], $item['item_condition']
+            ])->concat(collect($ret['exchange_items'])->map(fn ($item) => [
+                $ret['return_number'], $item['product_name'], $item['quantity'], $item['unit_price'], $item['total_price'], $item['unit_cost'], 'استبدال (مضاف للمخزون)', ''
+            ])))],
+            ['title' => 'حركات المخزون', 'headings' => ['المنتج', 'نوع الحركة', 'الاتجاه', 'الكمية', 'تكلفة الوحدة', 'التكلفة الإجمالية', 'الكمية قبل', 'الكمية بعد', 'رقم المرجع', 'رقم قيد اليومية', 'ملاحظات', 'تاريخ الحركة'], 'rows' => collect($data['stock_movements'])->map(fn ($r) => [
+                $r['product_name'], $r['movement_type'], $r['direction'], $r['quantity'], $r['unit_cost'], $r['total_cost'], $r['quantity_before'], $r['quantity_after'], $r['reference_key'], $r['journal_entry_number'], $r['notes'], $r['created_at']
+            ])],
+            ['title' => 'الجرد السنوي', 'headings' => ['رقم الجرد', 'تاريخ الجرد', 'السنة المالية', 'الحالة', 'إجمالي القيمة الدفترية', 'إجمالي القيمة الفعلية', 'قيمة الفارق', 'رقم قيد اليومية', 'ملاحظات', 'تم الجرد بواسطة', 'تم الاعتماد بواسطة', 'تاريخ الاعتماد'], 'rows' => collect($data['inventory_counts'])->map(fn ($r) => [
+                $r['count_number'], $r['count_date'], $r['fiscal_year'], $r['status'], $r['total_book_value'], $r['total_counted_value'], $r['variance_value'], $r['journal_entry_number'], $r['notes'], $r['created_by_email'], $r['approved_by_email'], $r['approved_at']
+            ])],
+            ['title' => 'تفاصيل الجرد السنوي', 'headings' => ['رقم الجرد', 'المنتج', 'الكمية الدفترية', 'الكمية الفعلية', 'الفارق في الكمية', 'تكلفة الوحدة', 'القيمة الدفترية', 'القيمة الفعلية', 'القيمة الفارق', 'ملاحظات'], 'rows' => collect($data['inventory_counts'])->flatMap(fn ($cnt) => collect($cnt['items'])->map(fn ($item) => [
+                $cnt['count_number'], $item['product_name'], $item['book_quantity'], $item['counted_quantity'], $item['variance_quantity'], $item['unit_cost'], $item['book_value'], $item['counted_value'], $item['variance_value'], $item['notes']
+            ]))],
+            ['title' => 'الإغلاق السنوي', 'headings' => ['السنة المالية', 'تاريخ الإغلاق', 'الحالة', 'إجمالي الإيرادات', 'إجمالي المصاريف', 'صافي الدخل', 'الأرباح المحتجزة قبل', 'الأرباح المحتجزة بعد', 'رقم قيد اليومية', 'ملاحظات', 'أغلق بواسطة', 'تاريخ الترحيل'], 'rows' => collect($data['fiscal_year_closings'])->map(fn ($r) => [
+                $r['fiscal_year'], $r['closing_date'], $r['status'], $r['total_revenue'], $r['total_expense'], $r['net_income'], $r['retained_earnings_before'], $r['retained_earnings_after'], $r['journal_entry_number'], $r['notes'], $r['closed_by_email'], $r['posted_at']
             ])],
         ];
     }
@@ -372,6 +425,230 @@ class TeamDataExportService
             PosSale::class => 'pos_sale:'.($saleKeys[$entry->reference_id] ?? $entry->reference_id),
             MerchantCustomerPayment::class => 'customer_payment:'.($paymentKeys[$entry->reference_id] ?? $entry->reference_id),
             default => class_basename($entry->reference_type).':'.$entry->reference_id,
+        };
+    }
+
+    protected function exportStatementShares(Team $team): array
+    {
+        return MerchantCustomerStatementShare::withoutGlobalScopes()
+            ->where('team_id', $team->id)
+            ->with(['merchantCustomer', 'user', 'sharedByUser', 'closedByUser'])
+            ->get()
+            ->map(fn (MerchantCustomerStatementShare $s) => [
+                'uuid' => $s->uuid,
+                'customer_name' => $s->merchantCustomer?->name,
+                'customer_phone' => $s->merchantCustomer?->phone,
+                'user_email' => $s->user?->email,
+                'shared_by_email' => $s->sharedByUser?->email,
+                'closed_by_email' => $s->closedByUser?->email,
+                'is_active' => $s->is_active,
+                'shared_at' => $s->shared_at?->toISOString(),
+                'closed_at' => $s->closed_at?->toISOString(),
+                'created_at' => $s->created_at?->toISOString(),
+            ])
+            ->values()
+            ->all();
+    }
+
+    protected function exportFinancialTransfers(Team $team): array
+    {
+        return MerchantCustomerFinancialTransfer::withoutGlobalScopes()
+            ->where('team_id', $team->id)
+            ->with(['merchantCustomer', 'statementShare', 'submitter', 'paymentAccount', 'reviewer', 'merchantCustomerPayment'])
+            ->get()
+            ->map(function (MerchantCustomerFinancialTransfer $t) {
+                $paymentExportKey = null;
+                if ($t->merchantCustomerPayment) {
+                    $paymentExportKey = 'customer_payment:' . $this->customerKey(
+                        $t->merchantCustomerPayment->merchantCustomer?->name,
+                        $t->merchantCustomerPayment->merchantCustomer?->phone
+                    ) . ':' . (float)$t->merchantCustomerPayment->amount . ':' . $t->merchantCustomerPayment->created_at?->timestamp;
+                }
+
+                return [
+                    'customer_name' => $t->merchantCustomer?->name,
+                    'customer_phone' => $t->merchantCustomer?->phone,
+                    'statement_share_uuid' => $t->statementShare?->uuid,
+                    'submitted_by_email' => $t->submitter?->email,
+                    'payment_account_name' => $t->paymentAccount?->name,
+                    'payment_method' => $t->payment_method,
+                    'purpose' => $t->purpose?->value ?? $t->purpose,
+                    'amount' => (float) $t->amount,
+                    'reference_number' => $t->reference_number,
+                    'notes' => $t->notes,
+                    'status' => $t->status?->value ?? $t->status,
+                    'reviewed_by_email' => $t->reviewer?->email,
+                    'reviewed_at' => $t->reviewed_at?->toISOString(),
+                    'rejection_reason' => $t->rejection_reason,
+                    'merchant_customer_payment_key' => $paymentExportKey,
+                    'created_at' => $t->created_at?->toISOString(),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    protected function exportSaleReturns(Team $team): array
+    {
+        return PosSaleReturn::withoutGlobalScopes()
+            ->where('team_id', $team->id)
+            ->with(['originalSale', 'processor', 'returnItems.product', 'exchangeItems.product'])
+            ->get()
+            ->map(fn (PosSaleReturn $r) => [
+                'sale_number' => $r->originalSale?->sale_number,
+                'return_number' => $r->return_number,
+                'return_type' => $r->return_type?->value ?? $r->return_type,
+                'refund_method' => $r->refund_method?->value ?? $r->refund_method,
+                'returned_amount' => (float) $r->returned_amount,
+                'exchange_amount' => (float) $r->exchange_amount,
+                'price_difference' => (float) $r->price_difference,
+                'refunded_to_customer' => (float) $r->refunded_to_customer,
+                'receivable_reduction_amount' => (float) $r->receivable_reduction_amount,
+                'charged_to_customer' => (float) $r->charged_to_customer,
+                'credit_note_amount' => (float) $r->credit_note_amount,
+                'status' => $r->status,
+                'notes' => $r->notes,
+                'processed_by_email' => $r->processor?->email,
+                'created_at' => $r->created_at?->toISOString(),
+                'items' => $r->returnItems->map(fn (PosSaleReturnItem $item) => [
+                    'product_name' => $item->product_name,
+                    'product_sku' => $item->product?->sku,
+                    'product_barcode' => $item->product?->barcode,
+                    'quantity_returned' => (float) $item->quantity_returned,
+                    'unit_price' => (float) $item->unit_price,
+                    'total_price' => (float) $item->total_price,
+                    'unit_cost' => (float) $item->unit_cost,
+                    'return_reason' => $item->return_reason,
+                    'item_condition' => $item->item_condition,
+                ])->values()->all(),
+                'exchange_items' => $r->exchangeItems->map(fn (PosExchangeItem $item) => [
+                    'product_name' => $item->product_name,
+                    'product_sku' => $item->product?->sku,
+                    'product_barcode' => $item->product?->barcode,
+                    'quantity' => (float) $item->quantity,
+                    'unit_price' => (float) $item->unit_price,
+                    'total_price' => (float) $item->total_price,
+                    'unit_cost' => (float) $item->unit_cost,
+                ])->values()->all(),
+            ])
+            ->values()
+            ->all();
+    }
+
+    protected function exportInventoryCounts(Team $team): array
+    {
+        return InventoryCount::withoutGlobalScopes()
+            ->where('team_id', $team->id)
+            ->with(['journalEntry', 'creator', 'approver', 'items.product'])
+            ->get()
+            ->map(fn (InventoryCount $c) => [
+                'count_number' => $c->count_number,
+                'count_date' => $c->count_date?->toDateString(),
+                'fiscal_year' => $c->fiscal_year,
+                'status' => $c->status?->value ?? $c->status,
+                'total_book_value' => (float) $c->total_book_value,
+                'total_counted_value' => (float) $c->total_counted_value,
+                'variance_value' => (float) $c->variance_value,
+                'journal_entry_number' => $c->journalEntry?->entry_number,
+                'notes' => $c->notes,
+                'created_by_email' => $c->creator?->email,
+                'approved_by_email' => $c->approver?->email,
+                'approved_at' => $c->approved_at?->toISOString(),
+                'created_at' => $c->created_at?->toISOString(),
+                'items' => $c->items->map(fn (InventoryCountItem $item) => [
+                    'product_name' => $item->product_name,
+                    'product_sku' => $item->product?->sku,
+                    'product_barcode' => $item->product?->barcode,
+                    'unit' => $item->unit,
+                    'book_quantity' => (float) $item->book_quantity,
+                    'counted_quantity' => $item->counted_quantity !== null ? (float) $item->counted_quantity : null,
+                    'variance_quantity' => (float) $item->variance_quantity,
+                    'unit_cost' => (float) $item->unit_cost,
+                    'book_value' => (float) $item->book_value,
+                    'counted_value' => (float) $item->counted_value,
+                    'variance_value' => (float) $item->variance_value,
+                    'notes' => $item->notes,
+                ])->values()->all(),
+            ])
+            ->values()
+            ->all();
+    }
+
+    protected function exportFiscalYearClosings(Team $team): array
+    {
+        return FiscalYearClosing::withoutGlobalScopes()
+            ->where('team_id', $team->id)
+            ->with(['journalEntry', 'closedBy'])
+            ->get()
+            ->map(fn (FiscalYearClosing $c) => [
+                'fiscal_year' => $c->fiscal_year,
+                'closing_date' => $c->closing_date?->toDateString(),
+                'status' => $c->status,
+                'total_revenue' => (float) $c->total_revenue,
+                'total_expense' => (float) $c->total_expense,
+                'net_income' => (float) $c->net_income,
+                'retained_earnings_before' => (float) $c->retained_earnings_before,
+                'retained_earnings_after' => (float) $c->retained_earnings_after,
+                'journal_entry_number' => $c->journalEntry?->entry_number,
+                'notes' => $c->notes,
+                'closed_by_email' => $c->closedBy?->email,
+                'posted_at' => $c->posted_at?->toISOString(),
+                'created_at' => $c->created_at?->toISOString(),
+            ])
+            ->values()
+            ->all();
+    }
+
+    protected function exportStockMovements(Team $team): array
+    {
+        $saleKeys = PosSale::withoutGlobalScopes()
+            ->where('team_id', $team->id)
+            ->pluck('sale_number', 'id');
+
+        $returnKeys = PosSaleReturn::withoutGlobalScopes()
+            ->where('team_id', $team->id)
+            ->pluck('return_number', 'id');
+
+        $countKeys = InventoryCount::withoutGlobalScopes()
+            ->where('team_id', $team->id)
+            ->pluck('count_number', 'id');
+
+        return StockMovement::withoutGlobalScopes()
+            ->where('team_id', $team->id)
+            ->with(['product', 'journalEntry', 'creator'])
+            ->get()
+            ->map(fn (StockMovement $m) => [
+                'product_name' => $m->product?->name,
+                'product_sku' => $m->product?->sku,
+                'product_barcode' => $m->product?->barcode,
+                'movement_type' => $m->movement_type?->value ?? $m->movement_type,
+                'direction' => $m->direction,
+                'quantity' => (float) $m->quantity,
+                'unit_cost' => (float) $m->unit_cost,
+                'total_cost' => (float) $m->total_cost,
+                'quantity_before' => (float) $m->quantity_before,
+                'quantity_after' => (float) $m->quantity_after,
+                'reference_key' => $this->resolveStockMovementReferenceKey($m, $saleKeys, $returnKeys, $countKeys),
+                'journal_entry_number' => $m->journalEntry?->entry_number,
+                'notes' => $m->notes,
+                'created_by_email' => $m->creator?->email,
+                'created_at' => $m->created_at?->toISOString(),
+            ])
+            ->values()
+            ->all();
+    }
+
+    protected function resolveStockMovementReferenceKey(StockMovement $movement, Collection $saleKeys, Collection $returnKeys, Collection $countKeys): ?string
+    {
+        if (! $movement->reference_type || ! $movement->reference_id) {
+            return null;
+        }
+
+        return match ($movement->reference_type) {
+            PosSale::class => 'pos_sale:'.($saleKeys[$movement->reference_id] ?? $movement->reference_id),
+            PosSaleReturn::class => 'pos_sale_return:'.($returnKeys[$movement->reference_id] ?? $movement->reference_id),
+            InventoryCount::class => 'inventory_count:'.($countKeys[$movement->reference_id] ?? $movement->reference_id),
+            default => class_basename($movement->reference_type).':'.$movement->reference_id,
         };
     }
 
