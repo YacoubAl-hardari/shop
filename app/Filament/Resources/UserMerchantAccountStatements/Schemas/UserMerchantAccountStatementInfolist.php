@@ -22,15 +22,15 @@ class UserMerchantAccountStatementInfolist
 
                         TextEntry::make('debit_amount')
                             ->label('مبلغ المدين')
-                            ->money('USD'),
+                            ->money(fn () => \App\Helpers\CurrencyHelper::getCode()),
 
                         TextEntry::make('credit_amount')
                             ->label('مبلغ الدائن')
-                            ->money('USD'),
+                            ->money(fn () => \App\Helpers\CurrencyHelper::getCode()),
 
                         TextEntry::make('balance')
                             ->label('الرصيد')
-                            ->money('USD'),
+                            ->money(fn () => \App\Helpers\CurrencyHelper::getCode()),
 
                         TextEntry::make('transaction_type')
                             ->label('نوع المعاملة')

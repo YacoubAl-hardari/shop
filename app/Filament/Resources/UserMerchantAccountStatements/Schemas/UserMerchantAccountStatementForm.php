@@ -33,19 +33,19 @@ class UserMerchantAccountStatementForm
                 TextInput::make('debit_amount')
                     ->label('مبلغ المدين')
                     ->numeric()
-                    ->prefix('$')
+                    ->prefix(fn () => \App\Helpers\CurrencyHelper::getSymbol())
                     ->default(0),
 
                 TextInput::make('credit_amount')
                     ->label('مبلغ الدائن')
                     ->numeric()
-                    ->prefix('$')
+                    ->prefix(fn () => \App\Helpers\CurrencyHelper::getSymbol())
                     ->default(0),
 
                 TextInput::make('balance')
                     ->label('الرصيد')
                     ->numeric()
-                    ->prefix('$')
+                    ->prefix(fn () => \App\Helpers\CurrencyHelper::getSymbol())
                     ->required(),
 
                 Select::make('transaction_type')

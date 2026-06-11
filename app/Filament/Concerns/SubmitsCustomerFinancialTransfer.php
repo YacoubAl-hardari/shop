@@ -97,13 +97,14 @@ trait SubmitsCustomerFinancialTransfer
                         }
 
                         $parts = [];
+                        $symbol = \App\Helpers\CurrencyHelper::getSymbol();
 
                         if ($customer->hasDebt()) {
-                            $parts[] = 'مديونية: '.number_format($customer->debtBalance(), 2).' ر.س';
+                            $parts[] = 'مديونية: '.number_format($customer->debtBalance(), 2).' ' . $symbol;
                         }
 
                         if ($customer->hasPrepaidBalance()) {
-                            $parts[] = 'رصيد فائض: '.number_format($customer->prepaidBalance(), 2).' ر.س';
+                            $parts[] = 'رصيد فائض: '.number_format($customer->prepaidBalance(), 2).' ' . $symbol;
                         }
 
                         if ($parts === []) {
@@ -116,7 +117,7 @@ trait SubmitsCustomerFinancialTransfer
                     ->label('المبلغ')
                     ->numeric()
                     ->required()
-                    ->prefix('ر.س')
+                    ->prefix(fn () => \App\Helpers\CurrencyHelper::getSymbol())
                     ->minValue(0.01)
                     ->live()
                     ->helperText('إذا تجاوز المبلغ المستحق تُسدّد الذمة ويُضاف الفائض للرصيد الفائض'),
@@ -133,16 +134,17 @@ trait SubmitsCustomerFinancialTransfer
 
                         $applied = min($amount, $customer->debtBalance());
                         $surplus = $amount - $applied;
+                        $symbol = \App\Helpers\CurrencyHelper::getSymbol();
 
                         if ($applied > 0 && $surplus > 0) {
-                            return 'يُسدّد '.number_format($applied, 2).' ر.س من المديونية ويُضاف '.number_format($surplus, 2).' ر.س للرصيد الفائض';
+                            return 'يُسدّد '.number_format($applied, 2).' ' . $symbol . ' من المديونية ويُضاف '.number_format($surplus, 2).' ' . $symbol . ' للرصيد الفائض';
                         }
 
                         if ($applied > 0) {
-                            return 'يُسدّد '.number_format($applied, 2).' ر.س من المديونية';
+                            return 'يُسدّد '.number_format($applied, 2).' ' . $symbol . ' من المديونية';
                         }
 
-                        return 'يُضاف '.number_format($surplus, 2).' ر.س كرصيد فائض (دفعة مقدمة)';
+                        return 'يُضاف '.number_format($surplus, 2).' ' . $symbol . ' كرصيد فائض (دفعة مقدمة)';
                     }),
                 PaymentDetailsSchema::methodSelect(),
                 PaymentDetailsSchema::accountSelectForTeam($teamId),

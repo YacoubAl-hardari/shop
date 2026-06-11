@@ -28,7 +28,7 @@ class UserMerchantPaymentTransactionInfolist
 
                         TextEntry::make('amount')
                             ->label('المبلغ')
-                            ->money('USD'),
+                            ->money(fn () => \App\Helpers\CurrencyHelper::getCode()),
 
                         TextEntry::make('payment_method')
                             ->label('طريقة الدفع')

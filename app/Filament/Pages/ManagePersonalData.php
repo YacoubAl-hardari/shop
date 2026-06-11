@@ -49,6 +49,63 @@ class ManagePersonalData extends Page implements HasForms
     public $importFile = null;
     public $deletePassword = '';
 
+    public ?array $currencyData = [];
+
+    public function mount(): void
+    {
+        $user = Auth::user();
+        $this->currencyForm->fill([
+            'currency' => $user->currency ?? 'SAR',
+        ]);
+    }
+
+    protected function getForms(): array
+    {
+        return [
+            'currencyForm',
+        ];
+    }
+
+    public function currencyForm(\Filament\Schemas\Schema $form): \Filament\Schemas\Schema
+    {
+        return $form
+            ->schema([
+                \Filament\Schemas\Components\Section::make('إعدادات العملة الشخصية')
+                    ->description('اختر العملة الأساسية لحسابك الشخصي. سيؤثر هذا على إحصائياتك المالية، ميزانيتك، وتقاريرك الشخصية.')
+                    ->schema([
+                        \Filament\Forms\Components\Select::make('currency')
+                            ->label('العملة الأساسية للحساب')
+                            ->options(\App\Helpers\CurrencyHelper::getOptions())
+                            ->required()
+                            ->native(false)
+                            ->searchable(),
+                    ])
+            ])
+            ->statePath('currencyData');
+    }
+
+    public function saveCurrency(): void
+    {
+        try {
+            $data = $this->currencyForm->getState();
+            $user = Auth::user();
+            $user->currency = $data['currency'];
+            $user->save();
+
+            Notification::make()
+                ->title('تم حفظ إعدادات العملة بنجاح')
+                ->success()
+                ->body('تم تحديث عملتك الشخصية إلى: ' . \App\Helpers\CurrencyHelper::getSymbol($user->currency))
+                ->send();
+        } catch (\Throwable $e) {
+            Notification::make()
+                ->title('خطأ في حفظ الإعدادات')
+                ->danger()
+                ->body($e->getMessage())
+                ->send();
+        }
+    }
+
     public static function getNavigationGroup(): ?string
     {
         return 'الإعدادات';

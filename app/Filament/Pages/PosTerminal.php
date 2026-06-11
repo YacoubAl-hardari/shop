@@ -134,12 +134,13 @@ class PosTerminal extends Page implements HasForms
 
                                 $parts = [];
 
+                                $symbol = \App\Helpers\CurrencyHelper::getSymbol();
                                 if ($customer->hasDebt()) {
-                                    $parts[] = 'مديونية: '.number_format($customer->debtBalance(), 2).' ر.س';
+                                    $parts[] = 'مديونية: '.number_format($customer->debtBalance(), 2).' ' . $symbol;
                                 }
 
                                 if ($customer->hasPrepaidBalance()) {
-                                    $parts[] = 'رصيد فائض: '.number_format($customer->prepaidBalance(), 2).' ر.س';
+                                    $parts[] = 'رصيد فائض: '.number_format($customer->prepaidBalance(), 2).' ' . $symbol;
                                 }
 
                                 return $parts === [] ? 'لا توجد مديونية أو رصيد فائض' : implode(' | ', $parts);
@@ -166,7 +167,7 @@ class PosTerminal extends Page implements HasForms
                         TextInput::make('paid_amount')
                             ->label('المبلغ المدفوع')
                             ->numeric()
-                            ->prefix('ر.س')
+                            ->prefix(fn () => \App\Helpers\CurrencyHelper::getSymbol())
                             ->live()
                             ->required(fn (Get $get): bool => $get('payment_type') === SalePaymentType::PARTIAL->value)
                             ->minValue(0.01)
@@ -183,7 +184,7 @@ class PosTerminal extends Page implements HasForms
                         TextInput::make('cash_tendered')
                             ->label('المبلغ المستلم من العميل')
                             ->numeric()
-                            ->prefix('ر.س')
+                            ->prefix(fn () => \App\Helpers\CurrencyHelper::getSymbol())
                             ->live()
                             ->placeholder('أدخل المبلغ المستلم لحساب الفكة...')
                             ->helperText(function (Get $get): ?string {
@@ -194,7 +195,7 @@ class PosTerminal extends Page implements HasForms
                                     'apply_customer_credit' => $get('apply_customer_credit'),
                                 ]);
                                 if ($tendered > $netDue) {
-                                    return 'الفكة (المتبقي للعميل): ' . number_format($tendered - $netDue, 2) . ' ر.س';
+                                    return 'الفكة (المتبقي للعميل): ' . number_format($tendered - $netDue, 2) . ' ' . \App\Helpers\CurrencyHelper::getSymbol();
                                 }
                                 return null;
                             })
@@ -219,7 +220,7 @@ class PosTerminal extends Page implements HasForms
                         Placeholder::make('cart_subtotal')
                             ->label('إجمالي الفاتورة')
                             ->columnSpanFull()
-                            ->content(fn (Get $get): string => number_format($this->calculateTotal($get('items') ?? []), 2).' ر.س')
+                            ->content(fn (Get $get): string => \App\Helpers\CurrencyHelper::format($this->calculateTotal($get('items') ?? [])))
                             ->extraAttributes(['class' => 'text-2xl font-bold text-primary-600']),
 
                         Placeholder::make('customer_credit_deduction')
@@ -229,21 +230,21 @@ class PosTerminal extends Page implements HasForms
                                 'merchant_customer_id' => $get('merchant_customer_id'),
                                 'apply_customer_credit' => $get('apply_customer_credit'),
                             ]) > 0)
-                            ->content(fn (Get $get): string => '- '.number_format($this->calculateCreditApplied([
+                            ->content(fn (Get $get): string => '- '.\App\Helpers\CurrencyHelper::format($this->calculateCreditApplied([
                                 'items' => $get('items') ?? [],
                                 'merchant_customer_id' => $get('merchant_customer_id'),
                                 'apply_customer_credit' => $get('apply_customer_credit'),
-                            ]), 2).' ر.س')
+                            ])))
                             ->columnSpanFull(),
 
                         Placeholder::make('amount_due')
                             ->label('المبلغ المستحق')
                             ->columnSpanFull()
-                            ->content(fn (Get $get): string => number_format($this->netSaleTotal([
+                            ->content(fn (Get $get): string => \App\Helpers\CurrencyHelper::format($this->netSaleTotal([
                                 'items' => $get('items') ?? [],
                                 'merchant_customer_id' => $get('merchant_customer_id'),
                                 'apply_customer_credit' => $get('apply_customer_credit'),
-                            ]), 2).' ر.س')
+                            ])))
                             ->extraAttributes(['class' => 'text-xl font-semibold']),
 
                         Textarea::make('notes')
@@ -387,7 +388,7 @@ class PosTerminal extends Page implements HasForms
         $date = $receipt->created_at->format('Y-m-d H:i');
         $total = number_format((float) $receipt->total_amount, 2, '.', '');
         
-        return "المتجر: {$sellerName}\nرقم الفاتورة: {$receipt->sale_number}\nالتاريخ: {$date}\nالإجمالي: {$total} ر.س";
+        return "المتجر: {$sellerName}\nرقم الفاتورة: {$receipt->sale_number}\nالتاريخ: {$date}\nالإجمالي: " . \App\Helpers\CurrencyHelper::format((float) $receipt->total_amount, $receipt->currency);
     }
 
     public function getZatcaQrCodeValue(PosSale $receipt, ?string $vatNumber = null): string

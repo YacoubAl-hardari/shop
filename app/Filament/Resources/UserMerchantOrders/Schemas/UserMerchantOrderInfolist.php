@@ -25,7 +25,7 @@ class UserMerchantOrderInfolist
 
                         TextEntry::make('total_price')
                             ->label('إجمالي السعر')
-                            ->money('USD'),
+                            ->money(fn () => \App\Helpers\CurrencyHelper::getCode()),
 
                         TextEntry::make('note')
                             ->label('ملاحظات')

@@ -76,8 +76,8 @@ it('can export, delete, and import all merchant business data successfully', fun
     // Create payment account
     $payAccount = MerchantPaymentAccount::create([
         'team_id' => $team->id,
-        'type' => 'cash',
-        'name' => 'Cash Account',
+        'type' => 'bank',
+        'name' => 'Bank Account',
         'account_number' => 'CASH-01',
         'is_active' => true,
         'is_default' => true,
@@ -343,7 +343,7 @@ it('can export, delete, and import all merchant business data successfully', fun
     expect($exportedData['pos_sale_returns'])->toHaveCount(1);
     expect($exportedData['inventory_counts'])->toHaveCount(1);
     expect($exportedData['fiscal_year_closings'])->toHaveCount(1);
-    expect($exportedData['stock_movements'])->toHaveCount(1);
+    expect($exportedData['stock_movements'])->toHaveCount(2);
 
     // Verify excel sheets generated without errors
     $excelSheets = $exportService->toExcelSheets($team);
@@ -400,5 +400,5 @@ it('can export, delete, and import all merchant business data successfully', fun
     expect(PosSaleReturn::withoutGlobalScopes()->where('team_id', $team->id)->count())->toBe(1);
     expect(InventoryCount::withoutGlobalScopes()->where('team_id', $team->id)->count())->toBe(1);
     expect(FiscalYearClosing::withoutGlobalScopes()->where('team_id', $team->id)->count())->toBe(1);
-    expect(StockMovement::withoutGlobalScopes()->where('team_id', $team->id)->count())->toBe(1);
+    expect(StockMovement::withoutGlobalScopes()->where('team_id', $team->id)->count())->toBe(2);
 });

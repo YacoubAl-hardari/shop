@@ -35,11 +35,11 @@ class UserMerchantAccountEntryInfolist
 
                         TextEntry::make('amount')
                             ->label('المبلغ')
-                            ->money('USD'),
+                            ->money(fn () => \App\Helpers\CurrencyHelper::getCode()),
 
                         TextEntry::make('balance_after')
                             ->label('الرصيد بعد المعاملة')
-                            ->money('USD'),
+                            ->money(fn () => \App\Helpers\CurrencyHelper::getCode()),
 
                         TextEntry::make('description')
                             ->label('الوصف')

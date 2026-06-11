@@ -73,7 +73,7 @@ class ManageFinancialSettings extends Page implements HasForms
                     TextInput::make('salary')
                         ->label('الراتب الشهري')
                         ->numeric()
-                        ->prefix('ريال')
+                        ->prefix(fn () => \App\Helpers\CurrencyHelper::getSymbol())
                         ->minValue(0)
                         ->step(0.01)
                         ->helperText('راتبك الشهري الصافي')
@@ -87,7 +87,7 @@ class ManageFinancialSettings extends Page implements HasForms
                         TextInput::make('min_spending_limit')
                             ->label('الحد الأدنى للمشتريات')
                             ->numeric()
-                            ->prefix('ريال')
+                            ->prefix(fn () => \App\Helpers\CurrencyHelper::getSymbol())
                             ->minValue(0)
                             ->step(0.01)
                             ->helperText('سيتم إشعارك إذا كانت قيمة الطلب أقل من هذا الحد'),
@@ -95,7 +95,7 @@ class ManageFinancialSettings extends Page implements HasForms
                         TextInput::make('max_spending_limit')
                             ->label('الحد الأقصى للمشتريات')
                             ->numeric()
-                            ->prefix('ريال')
+                            ->prefix(fn () => \App\Helpers\CurrencyHelper::getSymbol())
                             ->minValue(0)
                             ->step(0.01)
                             ->helperText('سيتم تنبيهك إذا تجاوزت قيمة الطلب هذا الحد'),
@@ -106,9 +106,9 @@ class ManageFinancialSettings extends Page implements HasForms
                     ->description('حدد الحد الأقصى للديون ونسب التحذير')
                     ->schema([
                         TextInput::make('max_debt_limit')
-                            ->label('الحد الأقصى للديون (بالريال)')
+                            ->label('الحد الأقصى للديون')
                             ->numeric()
-                            ->prefix('ريال')
+                            ->prefix(fn () => \App\Helpers\CurrencyHelper::getSymbol())
                             ->minValue(0)
                             ->step(0.01)
                             ->helperText('سيتم تنبيهك إذا تجاوزت ديونك الإجمالية هذا الحد'),

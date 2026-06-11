@@ -24,7 +24,7 @@ class UserMerchantProductInfolist
 
                         TextEntry::make('price')
                             ->label('السعر')
-                            ->money('USD'),
+                            ->money(fn () => \App\Helpers\CurrencyHelper::getCode()),
 
                         TextEntry::make('barcode')
                             ->label('الباركود'),

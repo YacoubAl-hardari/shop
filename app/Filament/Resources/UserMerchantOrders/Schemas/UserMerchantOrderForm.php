@@ -79,7 +79,7 @@ class UserMerchantOrderForm
                         TextInput::make('total_price')
                     ->label('إجمالي السعر')
                     ->numeric()
-                    ->prefix('$')
+                    ->prefix(fn () => \App\Helpers\CurrencyHelper::getSymbol())
                     ->disabled()
                     ->dehydrated()
                     ->default(0),
@@ -212,7 +212,7 @@ class UserMerchantOrderForm
                         TextInput::make('price')
                             ->label('السعر')
                             ->numeric()
-                            ->prefix('$')
+                            ->prefix(fn () => \App\Helpers\CurrencyHelper::getSymbol())
                             ->required()
                             ->visible(fn (callable $get) => ($get('user_merchant_product_id') ?? false))
                             ->live()
@@ -228,7 +228,7 @@ class UserMerchantOrderForm
                         TextInput::make('total_price')
                             ->label('إجمالي السعر')
                             ->numeric()
-                            ->prefix('$')
+                            ->prefix(fn () => \App\Helpers\CurrencyHelper::getSymbol())
                             ->disabled()
                             ->dehydrated()
                             ->visible(fn (callable $get) => ($get('user_merchant_product_id') ?? false)),

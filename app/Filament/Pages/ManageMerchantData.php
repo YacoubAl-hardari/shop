@@ -47,6 +47,63 @@ class ManageMerchantData extends Page implements HasForms
 
     public $deletePassword = '';
 
+    public ?array $currencyData = [];
+
+    public function mount(): void
+    {
+        $team = Filament::getTenant();
+        $this->currencyForm->fill([
+            'currency' => $team->currency ?? 'SAR',
+        ]);
+    }
+
+    protected function getForms(): array
+    {
+        return [
+            'currencyForm',
+        ];
+    }
+
+    public function currencyForm(\Filament\Schemas\Schema $form): \Filament\Schemas\Schema
+    {
+        return $form
+            ->schema([
+                \Filament\Schemas\Components\Section::make('إعدادات العملة')
+                    ->description('اختر العملة الأساسية لفرع التاجر. سيؤثر هذا على كافة فواتير البيع، المرتجعات، التقارير والقيود المحاسبية.')
+                    ->schema([
+                        \Filament\Forms\Components\Select::make('currency')
+                            ->label('العملة الأساسية للفرع')
+                            ->options(\App\Helpers\CurrencyHelper::getOptions())
+                            ->required()
+                            ->native(false)
+                            ->searchable(),
+                    ])
+            ])
+            ->statePath('currencyData');
+    }
+
+    public function saveCurrency(): void
+    {
+        try {
+            $data = $this->currencyForm->getState();
+            $team = Filament::getTenant();
+            $team->currency = $data['currency'];
+            $team->save();
+
+            Notification::make()
+                ->title('تم حفظ إعدادات العملة بنجاح')
+                ->success()
+                ->body('تم تحديث عملة الفرع إلى: ' . \App\Helpers\CurrencyHelper::getSymbol($team->currency))
+                ->send();
+        } catch (\Throwable $e) {
+            Notification::make()
+                ->title('خطأ في حفظ الإعدادات')
+                ->danger()
+                ->body($e->getMessage())
+                ->send();
+        }
+    }
+
     public static function getNavigationGroup(): ?string
     {
         return 'الإعدادات';

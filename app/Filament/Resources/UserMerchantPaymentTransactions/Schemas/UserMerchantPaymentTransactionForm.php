@@ -59,7 +59,7 @@ class UserMerchantPaymentTransactionForm
             TextInput::make('amount')
                 ->label('المبلغ')
                 ->numeric()
-                ->prefix('$')
+                ->prefix(fn () => \App\Helpers\CurrencyHelper::getSymbol())
                 ->required(),
 
             Select::make('payment_method')

@@ -48,7 +48,7 @@ class UserMerchantAccountEntryForm
                 TextInput::make('amount')
                     ->label('المبلغ')
                     ->numeric()
-                    ->prefix('$')
+                    ->prefix(fn () => \App\Helpers\CurrencyHelper::getSymbol())
                     ->required(),
 
                 Textarea::make('description')
@@ -67,7 +67,7 @@ class UserMerchantAccountEntryForm
                 TextInput::make('balance_after')
                     ->label('الرصيد بعد المعاملة')
                     ->numeric()
-                    ->prefix('$')
+                    ->prefix(fn () => \App\Helpers\CurrencyHelper::getSymbol())
                     ->required(),
 
                 DatePicker::make('entry_date')

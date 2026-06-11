@@ -37,7 +37,7 @@ class UserMerchantInfolist
 
                         TextEntry::make('balance')
                             ->label('الرصيد')
-                            ->money('USD'),
+                            ->money(fn () => \App\Helpers\CurrencyHelper::getCode()),
 
                         TextEntry::make('created_at')
                             ->label('تاريخ الإنشاء')

@@ -48,6 +48,8 @@ class TeamDataImportService
     public function importTeamData(Team $team, User $user, array $data): bool
     {
         DB::beginTransaction();
+        $previousSkipValue = \App\Services\StockMovementService::$skipProductEvents;
+        \App\Services\StockMovementService::$skipProductEvents = true;
 
         try {
             Log::info("Starting import for team: {$team->id}");
@@ -83,6 +85,8 @@ class TeamDataImportService
             DB::rollBack();
             Log::error("Failed to import data for team: {$team->id}. Error: {$e->getMessage()}");
             throw $e;
+        } finally {
+            \App\Services\StockMovementService::$skipProductEvents = $previousSkipValue;
         }
     }
 

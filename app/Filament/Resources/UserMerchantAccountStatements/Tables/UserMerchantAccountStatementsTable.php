@@ -30,17 +30,17 @@ class UserMerchantAccountStatementsTable
 
                 TextColumn::make('debit_amount')
                     ->label('مبلغ المدين')
-                    ->money('USD')
+                    ->money(fn () => \App\Helpers\CurrencyHelper::getCode())
                     ->sortable(),
 
                 TextColumn::make('credit_amount')
                     ->label('مبلغ الدائن')
-                    ->money('USD')
+                    ->money(fn () => \App\Helpers\CurrencyHelper::getCode())
                     ->sortable(),
 
                 TextColumn::make('balance')
                     ->label('الرصيد')
-                    ->money('USD')
+                    ->money(fn () => \App\Helpers\CurrencyHelper::getCode())
                     ->sortable(),
 
                 BadgeColumn::make('transaction_type')

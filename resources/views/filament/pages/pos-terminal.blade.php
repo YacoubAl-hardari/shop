@@ -462,7 +462,7 @@
                                     <div class="relative z-10 flex justify-between items-center mt-3 pt-2 border-t border-gray-100 dark:border-gray-800/50 w-full">
                                         <span class="text-xs text-gray-500 dark:text-gray-400">السعر</span>
                                         <span class="font-extrabold text-base text-primary-600 dark:text-primary-400">
-                                            {{ number_format($product->price, 2) }} <span class="text-xs font-normal">ر.س</span>
+                                            {{ number_format($product->price, 2) }} <span class="text-xs font-normal">{{ \App\Helpers\CurrencyHelper::getSymbol() }}</span>
                                         </span>
                                     </div>
                                 </button>
@@ -477,7 +477,7 @@
                         <div>
                             <span class="text-xs opacity-90 block">إجمالي السلة</span>
                             <span class="text-lg font-black font-mono">
-                                {{ number_format($this->calculateTotal($this->data['items'] ?? []), 2) }} ر.س
+                                {{ \App\Helpers\CurrencyHelper::format($this->calculateTotal($this->data['items'] ?? [])) }}
                             </span>
                         </div>
                         <button 
@@ -542,7 +542,7 @@
                                         </div>
                                         <div class="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1">
                                             <span>سعر الوحدة:</span>
-                                            <span class="font-semibold">{{ number_format($item['unit_price'], 2) }} ر.س</span>
+                                            <span class="font-semibold">{{ \App\Helpers\CurrencyHelper::format($item['unit_price']) }}</span>
                                         </div>
                                     </div>
 
@@ -609,9 +609,9 @@
                     <div 
                         x-data="{ 
                             open: false, 
-                            currency: 'SAR', 
+                            currency: '{{ \App\Helpers\CurrencyHelper::getMerchantCurrency() === "SAR" ? "USD" : "SAR" }}', 
                             amount: '', 
-                            rate: 140,
+                            rate: {{ \App\Helpers\CurrencyHelper::getMerchantCurrency() === "SAR" ? 3.75 : 140 }},
                             get localAmount() {
                                 let amt = parseFloat(this.amount) || 0;
                                 let rt = parseFloat(this.rate) || 0;
@@ -659,11 +659,27 @@
                                     <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">العملة الأجنبية</label>
                                     <select 
                                         x-model="currency" 
-                                        @change="rate = (currency === 'SAR' ? 140 : 530)"
+                                        @change="
+                                            const base = '{{ \App\Helpers\CurrencyHelper::getMerchantCurrency() }}';
+                                            if (base === 'YER') {
+                                                rate = (currency === 'SAR' ? 140 : 530);
+                                            } else if (base === 'SAR') {
+                                                rate = (currency === 'YER' ? 0.007 : 3.75);
+                                            } else if (base === 'USD') {
+                                                rate = (currency === 'SAR' ? 0.27 : (currency === 'YER' ? 0.0018 : 1));
+                                            } else if (base === 'EGP') {
+                                                rate = (currency === 'USD' ? 47 : (currency === 'SAR' ? 12.5 : 0.09));
+                                            } else {
+                                                rate = 1;
+                                            }
+                                        "
                                         class="w-full text-xs rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary-500 focus:border-transparent p-2"
                                     >
-                                        <option value="SAR">ريال سعودي (SAR)</option>
-                                        <option value="USD">دولار أمريكي (USD)</option>
+                                        @foreach(\App\Helpers\CurrencyHelper::getCurrencies() as $code => $info)
+                                            @if($code !== \App\Helpers\CurrencyHelper::getMerchantCurrency())
+                                                <option value="{{ $code }}">{{ $info['name'] }} ({{ $code }})</option>
+                                            @endif
+                                        @endforeach
                                     </select>
                                 </div>
 
@@ -694,7 +710,7 @@
                             <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-950 rounded-lg border border-gray-150 dark:border-gray-850">
                                 <div>
                                     <span class="text-[10px] text-gray-400 dark:text-gray-500 block">المقابل بالعملة المحلية</span>
-                                    <span class="text-base font-extrabold text-primary-600 dark:text-primary-400 font-mono" x-text="localAmount.toLocaleString('en-US', {minimumFractionDigits: 2}) + ' ر.س'"></span>
+                                    <span class="text-base font-extrabold text-primary-600 dark:text-primary-400 font-mono" x-text="localAmount.toLocaleString('en-US', {minimumFractionDigits: 2}) + ' ' + '{{ \App\Helpers\CurrencyHelper::getSymbol() }}'"></span>
                                 </div>
                                 
                                 <button 
@@ -915,27 +931,27 @@
                         <div class="space-y-1 pt-2 border-t border-dashed border-black text-[10px]">
                             <div class="flex justify-between">
                                 <span>إجمالي الأصناف{{ $taxNumber ? ' (شامل الضريبة)' : '' }}:</span>
-                                <span class="font-mono font-bold">{{ number_format($total, 2) }} ر.س</span>
+                                <span class="font-mono font-bold">{{ \App\Helpers\CurrencyHelper::format($total) }}</span>
                             </div>
                             @if($taxNumber)
                                 <div class="flex justify-between text-gray-600">
                                     <span>المبلغ الخاضع للضريبة (Taxable):</span>
-                                    <span class="font-mono">{{ number_format($taxableAmount, 2) }} ر.س</span>
+                                    <span class="font-mono">{{ \App\Helpers\CurrencyHelper::format($taxableAmount) }}</span>
                                 </div>
                                 <div class="flex justify-between text-gray-600">
                                     <span>ضريبة القيمة المضافة (VAT 15%):</span>
-                                    <span class="font-mono">{{ number_format($vatAmount, 2) }} ر.س</span>
+                                    <span class="font-mono">{{ \App\Helpers\CurrencyHelper::format($vatAmount) }}</span>
                                 </div>
                             @endif
                             @if($creditApplied > 0)
                                 <div class="flex justify-between text-emerald-700 font-bold">
                                     <span>الخصم / الرصيد المستخدم:</span>
-                                    <span class="font-mono">- {{ number_format($creditApplied, 2) }} ر.س</span>
+                                    <span class="font-mono">- {{ \App\Helpers\CurrencyHelper::format($creditApplied) }}</span>
                                 </div>
                             @endif
                             <div class="flex justify-between text-xs font-black border-t border-double border-black pt-1.5 mt-1">
                                 <span>صافي الفاتورة (Net Total):</span>
-                                <span class="font-mono">{{ number_format($netDue, 2) }} ر.س</span>
+                                <span class="font-mono">{{ \App\Helpers\CurrencyHelper::format($netDue) }}</span>
                             </div>
                         </div>
 
@@ -951,17 +967,17 @@
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-500">المبلغ المستلم (Received):</span>
-                                <span class="font-mono font-bold">{{ number_format($receiptCashTendered ?? $receipt->paid_amount, 2) }} ر.س</span>
+                                <span class="font-mono font-bold">{{ \App\Helpers\CurrencyHelper::format($receiptCashTendered ?? $receipt->paid_amount) }}</span>
                             </div>
                             @if($receipt->credit_amount > 0)
                                 <div class="flex justify-between text-rose-700 font-bold">
                                     <span>المتبقي في الذمة (Due):</span>
-                                    <span class="font-mono">{{ number_format($receipt->credit_amount, 2) }} ر.س</span>
+                                    <span class="font-mono">{{ \App\Helpers\CurrencyHelper::format($receipt->credit_amount) }}</span>
                                 </div>
                             @else
                                 <div class="flex justify-between">
                                     <span class="text-gray-500">المرتجع / الفكة (Change):</span>
-                                    <span class="font-mono font-bold">{{ number_format(max(0, ($receiptCashTendered ?? $receipt->paid_amount) - $netDue), 2) }} ر.س</span>
+                                    <span class="font-mono font-bold">{{ \App\Helpers\CurrencyHelper::format(max(0, ($receiptCashTendered ?? $receipt->paid_amount) - $netDue)) }}</span>
                                 </div>
                             @endif
                             @if($receipt->payment_reference)

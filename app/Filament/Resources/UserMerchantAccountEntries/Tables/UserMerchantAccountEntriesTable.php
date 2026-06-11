@@ -49,12 +49,12 @@ class UserMerchantAccountEntriesTable
 
                 TextColumn::make('amount')
                     ->label('المبلغ')
-                    ->money('USD')
+                    ->money(fn () => \App\Helpers\CurrencyHelper::getCode())
                     ->sortable(),
 
                 TextColumn::make('balance_after')
                     ->label('الرصيد بعد المعاملة')
-                    ->money('USD')
+                    ->money(fn () => \App\Helpers\CurrencyHelper::getCode())
                     ->sortable(),
 
                 TextColumn::make('entry_date')

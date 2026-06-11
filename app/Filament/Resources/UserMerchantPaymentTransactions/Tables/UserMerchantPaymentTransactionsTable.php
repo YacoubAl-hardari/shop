@@ -38,7 +38,7 @@ class UserMerchantPaymentTransactionsTable
 
                 TextColumn::make('amount')
                     ->label('المبلغ')
-                    ->money('USD')
+                    ->money(fn () => \App\Helpers\CurrencyHelper::getCode())
                     ->sortable(),
 
                 BadgeColumn::make('payment_method')

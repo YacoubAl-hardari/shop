@@ -1,4 +1,16 @@
 <x-filament-panels::page>
+    <x-filament::section class="mb-6">
+        <form wire:submit.prevent="saveCurrency" class="space-y-4">
+            {{ $this->currencyForm }}
+            
+            <div class="flex justify-end gap-3 mt-4">
+                <x-filament::button type="submit">
+                    حفظ إعدادات العملة
+                </x-filament::button>
+            </div>
+        </form>
+    </x-filament::section>
+
     <x-filament::section>
         <x-slot name="heading">
             تصدير البيانات

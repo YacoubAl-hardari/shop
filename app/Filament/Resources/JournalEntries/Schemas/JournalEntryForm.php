@@ -77,7 +77,7 @@ class JournalEntryForm
                                 ->numeric()
                                 ->default(0)
                                 ->minValue(0)
-                                ->prefix('ر.س')
+                                ->prefix(fn () => \App\Helpers\CurrencyHelper::getSymbol())
                                 ->inputMode('decimal')
                                 ->step(0.01)
                                 ->live(onBlur: true)
@@ -89,7 +89,7 @@ class JournalEntryForm
                                 ->numeric()
                                 ->default(0)
                                 ->minValue(0)
-                                ->prefix('ر.س')
+                                ->prefix(fn () => \App\Helpers\CurrencyHelper::getSymbol())
                                 ->inputMode('decimal')
                                 ->step(0.01)
                                 ->live(onBlur: true)
@@ -131,9 +131,10 @@ class JournalEntryForm
                             $diff   = round(abs($debit - $credit), 2);
                             $ok     = $diff === 0.0 && ($debit + $credit) > 0;
 
-                            $debitFmt  = number_format($debit,  2) . ' ر.س';
-                            $creditFmt = number_format($credit, 2) . ' ر.س';
-                            $diffFmt   = number_format($diff,   2) . ' ر.س';
+                            $symbol = \App\Helpers\CurrencyHelper::getSymbol();
+                            $debitFmt  = number_format($debit,  2) . ' ' . $symbol;
+                            $creditFmt = number_format($credit, 2) . ' ' . $symbol;
+                            $diffFmt   = number_format($diff,   2) . ' ' . $symbol;
 
                             if ($ok) {
                                 return new \Illuminate\Support\HtmlString(

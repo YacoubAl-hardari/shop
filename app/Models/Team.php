@@ -19,6 +19,7 @@ class Team extends Model implements HasAvatar, HasCurrentTenantLabel, HasName
         'description',
         'avatar_url',
         'is_active',
+        'currency',
     ];
 
     protected $casts = [

@@ -35,7 +35,7 @@ class UserMerchantProductForm
             TextInput::make('price')
                 ->label('السعر')
                 ->numeric()
-                ->prefix('$')
+                ->prefix(fn () => \App\Helpers\CurrencyHelper::getSymbol())
                 ->required(),
 
                 QrCodeInput::make('barcode')

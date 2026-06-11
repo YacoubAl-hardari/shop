@@ -32,7 +32,7 @@ class UserMerchantProductsTable
 
                 TextColumn::make('price')
                     ->label('السعر')
-                    ->money('USD')
+                    ->money(fn () => \App\Helpers\CurrencyHelper::getCode())
                     ->sortable(),
 
                 TextColumn::make('barcode')

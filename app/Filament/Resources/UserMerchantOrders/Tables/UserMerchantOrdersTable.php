@@ -33,7 +33,7 @@ class UserMerchantOrdersTable
 
                 TextColumn::make('total_price')
                     ->label('إجمالي السعر')
-                    ->money('USD')
+                    ->money(fn () => \App\Helpers\CurrencyHelper::getCode())
                     ->sortable(),
 
                 TextColumn::make('created_at')

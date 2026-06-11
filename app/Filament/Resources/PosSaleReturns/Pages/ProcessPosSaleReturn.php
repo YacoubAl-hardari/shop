@@ -394,7 +394,7 @@ class ProcessPosSaleReturn extends Page implements HasForms
                                         TextInput::make('unit_price')
                                             ->label('سعر الوحدة')
                                             ->numeric()
-                                            ->prefix('ر.س')
+                                            ->prefix(fn () => \App\Helpers\CurrencyHelper::getSymbol())
                                             ->required()
                                             ->live(),
 
